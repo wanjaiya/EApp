@@ -17,7 +17,7 @@ import { IOS_CLIENT_ID,WEB_CLIENT_ID } from '../../config/env';
 GoogleSignin.configure({
   webClientId: WEB_CLIENT_ID,
   scopes: ['https://www.googleapis.com/auth/drive.readonly'],
-  offlineAccess: true,
+  offlineAccess: false,
   forceCodeForRefreshToken: true,
   iosClientId: IOS_CLIENT_ID,
 });
