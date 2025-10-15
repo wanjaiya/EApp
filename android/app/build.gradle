@@ -84,6 +84,9 @@ android {
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1
         versionName "1.0"
+        manifestPlaceholders = [
+        'appAuthRedirectScheme': 'com.googleusercontent.apps.594722843062-pg0sdem09es6vffes30vq96p1hcufgth'
+      ]
     }
     signingConfigs {
         debug {
@@ -117,3 +120,5 @@ dependencies {
         implementation jscFlavor
     }
 }
+
+apply from: file("../../node_modules/react-native-vector-icons/fonts.gradle")
