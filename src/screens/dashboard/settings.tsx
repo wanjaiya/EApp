@@ -5,7 +5,7 @@ import { useSession } from '../../context/AuthContext';
 import Button from '../../components/core/Button';
 
 
-const settings = () => {
+const Settings = () => {
   
    const { user, signOut} = useSession();
 
@@ -42,4 +42,4 @@ const settings = () => {
   )
 }
 
-export default settings
+export default Settings

@@ -1,12 +1,12 @@
 import { View, Text } from 'react-native'
 import React from 'react'
 
-const completed = () => {
+const Completed = () => {
   return (
     <View>
-      <Text>completed</Text>
+      <Text>Completed</Text>
     </View>
   )
 }
 
-export default completed
+export default Completed

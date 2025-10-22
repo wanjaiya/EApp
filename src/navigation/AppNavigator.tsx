@@ -2,6 +2,7 @@ import React from "react";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import Welcome from "../screens/index";
 import Signin from "../screens/auth/sign-in";
+import CourseDetails from "../screens/courses/details";
 import { RootStackParamList } from './types';
 import { SessionProvider, useSession } from "../context/AuthContext";
 import { ActivityIndicator, View } from 'react-native';
@@ -24,15 +25,16 @@ if (isLoading) {
   return (
     <Stack.Navigator screenOptions={{ headerShown: false }}>
        {session && !isLoading ? (
+        <>
          <Stack.Screen name="MainTabs" component={MainTabs} />
+         <Stack.Screen name="CourseDetails" component={CourseDetails} />
+         </>
       ) : (
+       <>
          <Stack.Screen name="Welcome" component={Welcome} />
-       
+          <Stack.Screen name="Signin" component={Signin} />
+        </>
       )}
-       
-       <Stack.Screen name="Signin" component={Signin} />
-      {/* Main App after login/start */}
-      {/*<Stack.Screen name="MainTabs" component={MainTabs} /> */}
     </Stack.Navigator>
   );
 }

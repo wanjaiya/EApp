@@ -1,5 +1,6 @@
 import React from "react";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
+import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { useSession } from "../context/AuthContext";
 import { useTheme } from "../context/ThemeContext";
 import { useThemeColors } from "../hooks/useThemeColors";
@@ -10,10 +11,12 @@ import Settings from "../screens/dashboard/settings";
 import InProgress from "../screens/dashboard/inProgress";
 import Completed from "../screens/dashboard/completed";
 import List from "../screens/dashboard/list";
+import CourseDetails from "../screens/courses/details";
 import { MainTabsScreenProps } from "./types";
 
 
 const Tab = createBottomTabNavigator();
+const Stack = createNativeStackNavigator();
 
 export default function MainTabs({navigation} : MainTabsScreenProps) {
     const {session, isLoading} = useSession();
@@ -33,6 +36,15 @@ export default function MainTabs({navigation} : MainTabsScreenProps) {
       navigation.replace("Signin");
     }
 
+    function CoursesStack() {
+          return (
+            <Stack.Navigator>
+              <Stack.Screen name="Courses" component={List} />
+              {/* 👇 This screen is part of the stack but NOT in the tab bar */}
+            </Stack.Navigator>
+          );
+    }
+
     return (
     <Tab.Navigator screenOptions={{ headerShown: false, tabBarActiveTintColor: '#e6c619',
         tabBarStyle: {height: 70, backgroundColor: currentTheme === "dark" ? "#111827" : "#ffffff"},
@@ -48,7 +60,7 @@ export default function MainTabs({navigation} : MainTabsScreenProps) {
             <Ionicons name={focused ? 'checkmark-circle-sharp' : 'checkmark-circle-outline'} color={color} size={24} />
           ), }}/>
 
-           <Tab.Screen name="list" component={List} options={{ title: 'All Courses', tabBarIcon: ({ color, focused }) => (
+           <Tab.Screen name="list" component={CoursesStack} options={{ title: 'All Courses', tabBarIcon: ({ color, focused }) => (
             <Ionicons name={focused ? 'search-sharp' : 'search-outline'} color={color} size={24} />
           ), }} />
 

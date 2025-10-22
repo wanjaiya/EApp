@@ -23,5 +23,8 @@
             <category android:name="android.intent.category.LAUNCHER" />
         </intent-filter>
       </activity>
+      <meta-data
+        android:name="com.google.android.gms.auth.api.credentials.AppCredential"
+        android:value="594722843062-0a9gb0cghanfppriom4j0a3t7eo26fjk" />
     </application>
 </manifest>

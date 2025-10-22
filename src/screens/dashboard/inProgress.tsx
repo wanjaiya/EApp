@@ -1,12 +1,12 @@
 import { View, Text } from 'react-native'
 import React from 'react'
 
-const inProgress = () => {
+const InProgress = () => {
   return (
     <View>
-      <Text>inProgress</Text>
+      <Text>InProgress</Text>
     </View>
   )
 }
 
-export default inProgress
+export default InProgress

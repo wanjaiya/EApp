@@ -150,7 +150,7 @@ export function SessionProvider({ children }: PropsWithChildren) {
   };
 
   const value = {
-    signIn: handleSiginIn,
+        signIn: handleSiginIn,
         signOut: handleSignOut,
         session,
         user: parsedUser,

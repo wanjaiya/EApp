@@ -12,12 +12,12 @@ import {
   GoogleSigninButton,
   statusCodes,
 } from '@react-native-google-signin/google-signin';
-import { IOS_CLIENT_ID,WEB_CLIENT_ID } from '../../config/env';
+import { IOS_CLIENT_ID,WEB_CLIENT_ID, ANDROID_CLIENT_ID } from '../../config/env';
 
 GoogleSignin.configure({
   webClientId: WEB_CLIENT_ID,
   scopes: ['https://www.googleapis.com/auth/drive.readonly'],
-  offlineAccess: false,
+  offlineAccess: true,
   forceCodeForRefreshToken: true,
   iosClientId: IOS_CLIENT_ID,
 });
@@ -33,6 +33,7 @@ const Signin = ({ navigation }: SigninScreenProps) => {
     email: '',
     password: '',
   });
+
   const [loading, setLoading] = useState(false);
 
   const handleChange = (key: string, value: string) => {
@@ -53,7 +54,7 @@ const Signin = ({ navigation }: SigninScreenProps) => {
         response.data.edxinstanceId,
       );
 
-      navigation.navigate('MainTabs');
+      navigation.navigate('Welcome');
     } catch (error) {
       if (axios.isAxiosError(error)) {
         const responseData = error.response?.data;
@@ -72,31 +73,45 @@ const Signin = ({ navigation }: SigninScreenProps) => {
   };
 
   const handleGoogle = async () => {
+    setLoading(true);
   try {
     await GoogleSignin.hasPlayServices();
     const response = await GoogleSignin.signIn();
     if (response) {
-      console.log({ userInfo: response.data });
+      const result = await axiosInstance.post('/api/googleLogin', {
+        email: response.data.user.email,
+        googleId : response.data.user.id
+      });
+
+     const Rs = await signIn(
+        result.data.token,
+        result.data.user,
+        result.data.edxinstanceId,
+      );
+
+     if(Rs){
+      navigation.navigate('MainTabs');
+     }
+     // navigation.navigate('MainTabs');
+
     } else {
       // sign in was cancelled by user
     }
   } catch (error) {
-    console.log(error);
-    if (error) {
-      switch (error) {
-        case statusCodes.IN_PROGRESS:
-          // operation (eg. sign in) already in progress
-          break;
-        case statusCodes.PLAY_SERVICES_NOT_AVAILABLE:
-          // Android only, play services not available or outdated
-          break;
-        default:
-        // some other error happened
+      if (axios.isAxiosError(error)) {
+        const responseData = error.response?.data;
+        if (responseData?.errors) {
+          setErrors(responseData.errors);
+        } else if (responseData?.message) {
+          Alert.alert('Error', responseData.message);
+        }
+      } else {
+        console.error('Error', error);
+        Alert.alert('Error', 'Unable to connect to the server.');
       }
-    } else {
-      // an error that's not related to google sign in occurred
+    } finally {
+      setLoading(false);
     }
-  }
 
   };
 
