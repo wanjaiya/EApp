@@ -14,6 +14,7 @@ const Index = ({ navigation }: MainTabsScreenProps) => {
   const colors = useThemeColors();
   const [stats, setStats] = useState([]);
   const [suggested, setSuggested] = useState([]);
+  const [latest, setLatest] = useState([]);
   const { currentTheme } = useTheme();
 
   const fetchDashboardData = async () => {
@@ -34,14 +35,30 @@ const Index = ({ navigation }: MainTabsScreenProps) => {
   const fetchSuggestedCourses = async () => {
 
     try {
-        const response = await axiosInstance.get(`/api/request-courses/`, {
+        const response = await axiosInstance.get(`/api/suggested-courses/`, {
           headers: {
             Authorization: `Bearer ${session}`,
           },
         });
 
-
         setSuggested(response.data);
+
+      } catch (error) {
+        console.log(error);
+        console.error("Failed to fetch suggested courses:", error);
+      }
+    };
+
+    const fetchLatestCourses = async () => {
+
+    try {
+        const response = await axiosInstance.get(`/api/latest-courses/`, {
+          headers: {
+            Authorization: `Bearer ${session}`,
+          },
+        });
+
+        setLatest(response.data);
 
       } catch (error) {
         console.log(error);
@@ -53,10 +70,11 @@ const Index = ({ navigation }: MainTabsScreenProps) => {
   useEffect(() => {
     fetchDashboardData();
    fetchSuggestedCourses();
+   fetchLatestCourses();
 
   }, []);
 
- console.log(suggested);
+
   return (
      <ScrollView className={`flex-1 ${currentTheme === "dark" ? "bg-gray-900" : "bg-white"}`}>
       <View className="p-4">
@@ -110,6 +128,7 @@ const Index = ({ navigation }: MainTabsScreenProps) => {
                   effort={course.effort}
                   course_image_uri={course.course_image_uri}
                   course_id={course.course_id}
+                  enrolled= {course.enrolled == 1 ? 'Enrolled' : 'Not Enrolled'}
                   gradient={
                     [colors.card, colors.surface] as readonly [
                       string,
@@ -128,6 +147,45 @@ const Index = ({ navigation }: MainTabsScreenProps) => {
             <View className="flex flex-row mt-5 items-center justify-center">
               <Text className={`text-2xl font-bold mb-2 ${currentTheme === "dark" ? "text-white" : "text-gray-800"}`}>
                  No Suggested courses
+              </Text>
+            </View>
+          )}
+
+          <View className="flex flex-row">
+          <Text className={`text-2xl font-bold mb-2 ${currentTheme === "dark" ? "text-white" : "text-gray-800"}`}>
+            Latest Courses
+          </Text>
+        </View>
+        { !latest || latest.length !== 0 ? (
+          <>
+          <ScrollView horizontal style={{ flex: 1, padding: 12, paddingLeft:0 }}>
+           <View className="flex flex-row mb-4">
+              {latest.map((course, index) => (
+                <CourseCard
+                  key={index}
+                  display_name={course.display_name}
+                  effort={course.effort}
+                  course_image_uri={course.course_image_uri}
+                  course_id={course.course_id}
+                  enrolled= {course.enrolled == 1 ? 'Enrolled' : 'Not Enrolled'}
+                  gradient={
+                    [colors.card, colors.surface] as readonly [
+                      string,
+                      string,
+                      ...string[],
+                    ]
+                  }
+                  onPress={() => navigation.navigate('CourseDetails', { course: course})}
+                  className={`flex-1 max-w-72 h-auto ${index > 0 ? 'ml-4' : ''}`}
+                />
+              ))}
+               </View>
+            </ScrollView>
+          </>
+          ) : (
+            <View className="flex flex-row mt-5 items-center justify-center">
+              <Text className={`text-2xl font-bold mb-2 ${currentTheme === "dark" ? "text-white" : "text-gray-800"}`}>
+                 No Latest courses
               </Text>
             </View>
           )}

@@ -16,6 +16,7 @@ export interface CourseCardProps {
     gradient?: readonly [string, string, ...string[]];
     disabled?: boolean;
     className?: string;
+    enrolled?: string;
 }
 
 const CourseCard: React.FC<CourseCardProps> = ({
@@ -26,7 +27,8 @@ gradient,
 effort,
 course_image_uri,
 disabled = false,
-className
+className,
+enrolled,
 })=> {
     const colors = useThemeColors();
     const pieces = effort?.split(":");
@@ -47,21 +49,27 @@ className
             resizeMode="cover"
         />
          </View>
-
-         <View className="flex flex-row w-full p-2 pt-4">
-           <Text className={`text-md font-bold  ${currentTheme === "dark" ? "text-white" : "text-gray-800"}`}> {display_name}</Text>
-         </View>
-         <View className="flex flex-row p-4 pt-0">
-         <Text className={`${currentTheme === "dark" ? "text-white" : "text-gray-800"}`}>
-                <MaterialIcons
-                name="access-time"
-                size={16}
-                color={colors.primary}
-                style={{ marginRight: 20, paddingTop: 20}}
-                />
-                {pieces[2]} Mins
-            </Text>
-        </View>
+         <View style={{minHeight: 120}}>
+             <View className="flex flex-row w-full p-3 pt-4">
+               <Text className={`text-md font-bold  ${currentTheme === "dark" ? "text-white" : "text-gray-800"}`}> {display_name}</Text>
+             </View>
+             <View className="absolute bottom-4 left-4 right-4 flex-row justify-between">
+                <View className="flex flex-row">
+                   <MaterialIcons
+                    name="access-time"
+                    size={14}
+                    color={colors.primary}
+                    style={{paddingTop: 2, paddingRight: 3}}
+                    />
+                   <Text className={`${currentTheme === "dark" ? "text-white" : "text-gray-800"}`}>
+                    {pieces[2]} Mins
+                </Text>
+                </View>
+                 <Text className={`self-end ${currentTheme === "dark" ? "text-white" : "text-gray-800"}`}>
+                  {enrolled}
+                </Text>
+            </View>
+      </View>
         </GradientCard>
     );
 
