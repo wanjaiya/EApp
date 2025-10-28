@@ -2,8 +2,9 @@ import React from 'react';
 import { View, Text } from 'react-native';
 
 const CourseView = ({ route, navigation }) => {
-  const { section } = route.params;
-  console.log(section);
+  const { section, parent } = route.params;
+  console.log(section.value.children);
+  console.log(parent);
   return (
     <View>
       <Text></Text>

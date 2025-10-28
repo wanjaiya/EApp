@@ -263,6 +263,7 @@ const Details = ({ route, navigation }) => {
                               onPress={() =>
                                 navigation.navigate('CourseView', {
                                   section: match,
+                                  parent: sections,
                                 })
                               }
                               style={{ paddingVertical: 8 }}
