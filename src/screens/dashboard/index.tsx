@@ -10,12 +10,15 @@ import CourseCard from '../../components/app/CourseCard';
 import { MainTabsScreenProps } from '../../navigation/types';
 
 const Index = ({ navigation }: MainTabsScreenProps) => {
-  const { user, session } = useSession();
+  const { user, session, sessionId } = useSession();
   const colors = useThemeColors();
   const [stats, setStats] = useState([]);
   const [suggested, setSuggested] = useState([]);
   const [latest, setLatest] = useState([]);
   const { currentTheme } = useTheme();
+  const [visibleCount, setVisibleCount] = useState(5);
+
+
 
   const fetchDashboardData = async () => {
     try {
@@ -38,6 +41,7 @@ const Index = ({ navigation }: MainTabsScreenProps) => {
           Authorization: `Bearer ${session}`,
         },
       });
+
       console.log(response.data);
       setSuggested(response.data);
     } catch (error) {
@@ -60,6 +64,9 @@ const Index = ({ navigation }: MainTabsScreenProps) => {
       console.error('Failed to fetch suggested courses:', error);
     }
   };
+
+  const visibleSuggested = suggested.slice(0, visibleCount);
+  const visibleLatest = latest.slice(0, visibleCount);
 
   useEffect(() => {
     fetchDashboardData();
@@ -131,7 +138,7 @@ const Index = ({ navigation }: MainTabsScreenProps) => {
               style={{ flex: 1, padding: 12, paddingLeft: 0 }}
             >
               <View className="flex flex-row mb-4">
-                {suggested.map((course, index) => (
+                {visibleSuggested.map((course, index) => (
                   <CourseCard
                     key={index}
                     display_name={course.display_name}
@@ -149,13 +156,45 @@ const Index = ({ navigation }: MainTabsScreenProps) => {
                       ]
                     }
                     onPress={() =>
-                      navigation.navigate('CourseDetails', { course: course })
+                      navigation.navigate('CourseDetails', {
+                        course: course,
+                      })
                     }
                     className={`flex-1 max-w-72 h-auto ${
                       index > 0 ? 'ml-4' : ''
                     }`}
+                    style={{ width: '30%', marginBottom: 16 }}
+                    imageStyle={{ width: 250, height: 120 }}
                   />
                 ))}
+
+                {visibleCount < suggested.length && (
+                  <TouchableOpacity
+                    onPress={() =>
+                      navigation.navigate('List', { list: suggested })
+                    }
+                    style={{
+                      padding: 20,
+                      borderRadius: 10,
+                      justifyContent: 'center',
+                      alignItems: 'center',
+                    }}
+                  >
+                    <Text
+                      className={`text-lg font-bold mb-2 ${
+                        currentTheme === 'dark' ? 'text-white' : 'text-gray-800'
+                      }`}
+                    >
+                      See More
+                      <MaterialIcons
+                        name="keyboard-double-arrow-right"
+                        size={20}
+                        color={colors.textWhite}
+                        style={{ marginTop: 5, paddingTop: 10, paddingLeft: 2 }}
+                      />
+                    </Text>
+                  </TouchableOpacity>
+                )}
               </View>
             </ScrollView>
           </>
@@ -187,7 +226,7 @@ const Index = ({ navigation }: MainTabsScreenProps) => {
               style={{ flex: 1, padding: 12, paddingLeft: 0 }}
             >
               <View className="flex flex-row mb-4">
-                {latest.map((course, index) => (
+                {visibleLatest.map((course, index) => (
                   <CourseCard
                     key={index}
                     display_name={course.display_name}
@@ -210,8 +249,37 @@ const Index = ({ navigation }: MainTabsScreenProps) => {
                     className={`flex-1 max-w-72 h-auto ${
                       index > 0 ? 'ml-4' : ''
                     }`}
+                    style={{ width: '30%', marginBottom: 16 }}
+                    imageStyle={{ width: 250, height: 120 }}
                   />
                 ))}
+                {visibleCount < latest.length && (
+                  <TouchableOpacity
+                    onPress={() =>
+                      navigation.navigate('List', { list: latest })
+                    }
+                    style={{
+                      padding: 20,
+                      borderRadius: 10,
+                      justifyContent: 'center',
+                      alignItems: 'center',
+                    }}
+                  >
+                    <Text
+                      className={`text-lg font-bold mb-2 ${
+                        currentTheme === 'dark' ? 'text-white' : 'text-gray-800'
+                      }`}
+                    >
+                      See More
+                      <MaterialIcons
+                        name="keyboard-double-arrow-right"
+                        size={20}
+                        color={colors.textWhite}
+                        style={{ marginTop: 5, paddingTop: 10, paddingLeft: 2 }}
+                      />
+                    </Text>
+                  </TouchableOpacity>
+                )}
               </View>
             </ScrollView>
           </>

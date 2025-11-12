@@ -99,9 +99,8 @@ const Details = ({ route, navigation }) => {
           Authorization: `Bearer ${session}`,
         },
       });
-      setEnrollment(1);
 
-      //console.log(response.data.outline);
+      console.log(response.data);
 
       await setDetails(response.data);
       await setSequential(response.data.sequential);
@@ -109,6 +108,14 @@ const Details = ({ route, navigation }) => {
       console.error('Failed to course additional data:', error);
     }
   };
+
+  function formatToDate(dateStr) {
+    const date = new Date(dateStr.replace(' ', 'T'));
+    const d = String(date.getDate()).padStart(2, '0');
+    const m = String(date.getMonth() + 1).padStart(2, '0');
+    const y = date.getFullYear();
+    return `${d}-${m}-${y}`;
+  }
 
   useEffect(() => {
     fetchCourseData();
@@ -131,7 +138,7 @@ const Details = ({ route, navigation }) => {
           />
         </TouchableOpacity>
         <Text
-          className={`text-lg font-semibold ml-3 ${
+          className={`text-lg font-semibold  ${
             currentTheme === 'dark' ? 'text-white' : 'text-gray-800'
           }`}
         >
@@ -150,7 +157,7 @@ const Details = ({ route, navigation }) => {
       </View>
 
       {/*Effort and enrollment text*/}
-      <View className=" flex-row justify-between">
+      <View className=" flex-row justify-between mt-3">
         <View className="p-4 pt-0 flex flex-row">
           <MaterialIcons
             name="access-time"
@@ -171,9 +178,39 @@ const Details = ({ route, navigation }) => {
             currentTheme === 'dark' ? 'text-white' : 'text-gray-800'
           }`}
         >
-          {enrollment == 1 ? 'Enrolled' : ''}
+          {course.completion_status
+            ? course.completion_status
+            : course.enrolled == 1
+            ? 'Enrolled'
+            : 'Not Enrolled'}
         </Text>
       </View>
+
+      {/*Completion Date and Score*/}
+      {course.completion_date ? (
+        <>
+          <View className=" flex-row justify-between mt-3">
+            <Text
+              className={`pl-4 ${
+                currentTheme === 'dark' ? 'text-white' : 'text-gray-800'
+              }`}
+            >
+              {`Score: ${Math.round(course.score * 100)}%`}
+            </Text>
+
+            <Text
+              className={`pr-6 pt-0 ${
+                currentTheme === 'dark' ? 'text-white' : 'text-gray-800'
+              }`}
+            >
+              {`Completion Date: ${formatToDate(course.completion_date)}`}
+            </Text>
+          </View>
+        </>
+      ) : (
+        ''
+      )}
+
       {/*Course Description*/}
       <View className="p-4 pb-2 flex items-center justify-center">
         <RenderHTML
@@ -189,7 +226,7 @@ const Details = ({ route, navigation }) => {
         />
       </View>
       {/*Course Outline*/}
-      {enrollment == 0 ? (
+      {course.enrolled == 0 ? (
         <View className="p-4 pt-0">
           <Text
             className={`text-2xl font-bold mb-2 ${
@@ -227,6 +264,7 @@ const Details = ({ route, navigation }) => {
           <FlatList
             data={sections}
             keyExtractor={item => item.value.id}
+            scrollEnabled={false}
             renderItem={({ item }) => {
               if (item.value.type === 'sequential') {
                 return (
@@ -264,6 +302,8 @@ const Details = ({ route, navigation }) => {
                                 navigation.navigate('CourseView', {
                                   section: match,
                                   parent: sections,
+                                    chapter: item,
+                                    course_id: course.course_id
                                 })
                               }
                               style={{ paddingVertical: 8 }}
@@ -293,9 +333,9 @@ const Details = ({ route, navigation }) => {
         </View>
       )}
 
-      {enrollment == 0 ? (
+      {course.enrolled == 0 ? (
         <Button
-          className={`bottom-6 w-full `}
+          className={`bottom-6 w-full mt-2 `}
           onPress={handleEnrollment}
           disabled={loading}
           loading={loading}

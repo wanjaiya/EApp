@@ -52,6 +52,7 @@ const Signin = ({ navigation }: SigninScreenProps) => {
         response.data.token,
         response.data.user,
         response.data.edxinstanceId,
+          response.data.sessionId
       );
 
       navigation.navigate('Welcome');
@@ -87,11 +88,12 @@ const Signin = ({ navigation }: SigninScreenProps) => {
         result.data.token,
         result.data.user,
         result.data.edxinstanceId,
+         result.data.sessionId
       );
 
-     if(Rs){
-      navigation.navigate('MainTabs');
-     }
+     // if(Rs){
+     //  navigation.navigate('MainTabs');
+     // }
      // navigation.navigate('MainTabs');
 
     } else {

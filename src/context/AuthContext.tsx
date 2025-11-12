@@ -21,13 +21,14 @@ interface User {
 }
 
 interface AuthContextType {
-  signIn: (token: string, user: User, edxinstanceId: string) => void;
+  signIn: (token: string, user: User, edxinstanceId: string, sessionId: string) => void;
   signOut: () => void;
   session?: string | null;
   user?: User | null;
   isLoading: boolean;
   updateUser: (userData: any) => Promise<void>;
   edxSessionId?: string| null;
+  sessionId?: string | null;
 
 }
 
@@ -39,6 +40,7 @@ const AuthContext = createContext<AuthContextType>({
   isLoading: false,
   updateUser: async () => {},
   edxSessionId: null,
+    sessionId: null,
   
 });
 
@@ -56,7 +58,7 @@ export function SessionProvider({ children }: PropsWithChildren) {
   const [[isLoading, session], setSession] = useStorageState("session");
   const [[, user], setUser] = useStorageState("user");
   const [[, edxSessionId], setEdxSessionId] = useStorageState("edxSession");
-  
+    const [[, sessionId], setSessionId] = useStorageState("sessionId");
 
   // Add this function to update user data
   const updateUser = async (userData: any) => {
@@ -74,6 +76,7 @@ export function SessionProvider({ children }: PropsWithChildren) {
         setSession(null);
         setUser(null);
         setEdxSessionId(null);
+        setSessionId(null);
         
         return false;
       }
@@ -98,6 +101,7 @@ export function SessionProvider({ children }: PropsWithChildren) {
         setSession(null);
         setUser(null);
         setEdxSessionId(null);
+        setSessionId(null);
       } else {
         console.error("Error fetching user info:", error);
       }
@@ -135,11 +139,12 @@ export function SessionProvider({ children }: PropsWithChildren) {
   };
 
   // Function to Sign in User
-  const handleSiginIn = async (token: string, userData: User, edxinstanceId: string) => {
+  const handleSiginIn = async (token: string, userData: User, edxinstanceId: string, sessionId:string) => {
     try {
       await setSession(token);
       await setUser(JSON.stringify(userData));
       await setEdxSessionId(edxinstanceId);
+      await setSessionId(sessionId);
 
       return true;
 
@@ -157,6 +162,7 @@ export function SessionProvider({ children }: PropsWithChildren) {
         isLoading,
         updateUser: handleUpdateUser,
         edxSessionId,
+        sessionId,
   }
 
   return (
