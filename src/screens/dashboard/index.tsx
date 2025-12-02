@@ -72,7 +72,9 @@ const Index = ({ navigation }: MainTabsScreenProps) => {
     fetchDashboardData();
     fetchSuggestedCourses();
     fetchLatestCourses();
+      console.log(user);
   }, []);
+
 
   return (
     <ScrollView

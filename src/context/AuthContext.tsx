@@ -20,8 +20,15 @@ interface User {
   published: boolean;
 }
 
+interface edxUser {
+  id: number;
+  email: string;
+  username: string;
+  is_active: number;
+}
+
 interface AuthContextType {
-  signIn: (token: string, user: User, edxinstanceId: string, sessionId: string) => void;
+  signIn: (token: string, user: User, edxinstanceId: string, sessionId: string, edxUser: edxUser, position: string) => void;
   signOut: () => void;
   session?: string | null;
   user?: User | null;
@@ -29,6 +36,8 @@ interface AuthContextType {
   updateUser: (userData: any) => Promise<void>;
   edxSessionId?: string| null;
   sessionId?: string | null;
+  edxUser?: edxUser | null; 
+  position?: string | null;
 
 }
 
@@ -40,7 +49,8 @@ const AuthContext = createContext<AuthContextType>({
   isLoading: false,
   updateUser: async () => {},
   edxSessionId: null,
-    sessionId: null,
+  sessionId: null,
+  edxUser: null
   
 });
 
@@ -58,7 +68,9 @@ export function SessionProvider({ children }: PropsWithChildren) {
   const [[isLoading, session], setSession] = useStorageState("session");
   const [[, user], setUser] = useStorageState("user");
   const [[, edxSessionId], setEdxSessionId] = useStorageState("edxSession");
-    const [[, sessionId], setSessionId] = useStorageState("sessionId");
+  const [[, sessionId], setSessionId] = useStorageState("sessionId");
+  const [[, edxUser], setEdxUser] = useStorageState("edxUser");
+   const [[, position], setPosition] = useStorageState("position");
 
   // Add this function to update user data
   const updateUser = async (userData: any) => {
@@ -77,6 +89,8 @@ export function SessionProvider({ children }: PropsWithChildren) {
         setUser(null);
         setEdxSessionId(null);
         setSessionId(null);
+        setEdxUser(null);
+        setPosition(null);
         
         return false;
       }
@@ -102,6 +116,9 @@ export function SessionProvider({ children }: PropsWithChildren) {
         setUser(null);
         setEdxSessionId(null);
         setSessionId(null);
+        setEdxUser(null);
+        setPosition(null);
+
       } else {
         console.error("Error fetching user info:", error);
       }
@@ -127,6 +144,17 @@ export function SessionProvider({ children }: PropsWithChildren) {
       })()
     : null;
 
+    const parsedEdxUser = edxUser
+    ? (() => {
+        try {
+          return JSON.parse(edxUser);
+        } catch (e) {
+          console.error("Failed to parse user data:", e);
+          return null;
+        }
+      })()
+    : null;
+
   //Fucntion to Update user Data with proper JSON Stringification
   const handleUpdateUser = async (userData: any) => {
     try {
@@ -139,12 +167,14 @@ export function SessionProvider({ children }: PropsWithChildren) {
   };
 
   // Function to Sign in User
-  const handleSiginIn = async (token: string, userData: User, edxinstanceId: string, sessionId:string) => {
+  const handleSiginIn = async (token: string, userData: User, edxinstanceId: string, sessioId: string, edxData: edxUser, pos:string ) => {
     try {
       await setSession(token);
       await setUser(JSON.stringify(userData));
       await setEdxSessionId(edxinstanceId);
-      await setSessionId(sessionId);
+      await setSessionId(sessioId);
+      await setEdxUser(JSON.stringify(edxData));
+      await setPosition(pos);
 
       return true;
 
@@ -163,6 +193,8 @@ export function SessionProvider({ children }: PropsWithChildren) {
         updateUser: handleUpdateUser,
         edxSessionId,
         sessionId,
+        edxUser: parsedEdxUser,
+        position
   }
 
   return (
