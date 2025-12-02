@@ -43,6 +43,9 @@ const Details = ({ route, navigation }) => {
     value,
   }));
 
+
+  console.log(sections);
+
   const toggleExpand = id => {
     setExpanded(expanded === id ? null : id);
   };
@@ -326,8 +329,6 @@ const Details = ({ route, navigation }) => {
                                     navigation.navigate('CourseView', {
                                       section: match,
                                       parent: sections,
-                                      chapter: item,
-                                      course_id: course.course_id,
                                     })
                                   }
                                   style={{ paddingVertical: 8 }}

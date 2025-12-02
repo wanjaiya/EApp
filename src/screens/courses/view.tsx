@@ -3,12 +3,6 @@ import {
   View,
   Text,
   TouchableOpacity,
-  ActivityIndicator,
-  ScrollView,
-  Linking,
-  Alert,
-  Platform,
-  Button,
   useWindowDimensions,
   StyleSheet,
 } from 'react-native';
@@ -18,8 +12,8 @@ import { useThemeColors } from '../../hooks/useThemeColors';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import { WebView } from 'react-native-webview';
 import Cookies from '@react-native-cookies/cookies';
-import RenderHTML from 'react-native-render-html';
 import axios from 'axios';
+import Button from '../../components/core/Button';
 
 const LMS_URL = 'https://courses.akinsure.com';
 
@@ -30,14 +24,14 @@ const CourseView = ({ route, navigation }) => {
     useSession();
   const colors = useThemeColors();
   const { currentTheme } = useTheme();
-  const { section, parent, chapter, course_id } = route.params;
+  const { section, parent } = route.params;
   const webViewRef = useRef(null);
 
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [loading, setLoading] = useState(false);
   const [renderUrl, setRenderUrl] = useState('');
-  const [match, setMatch] = useState([]);
-  const [sectionType, setSectionType] = useState<SectionType>('html');
+  const [nextSection, setNextSection] = useState('');
+  const [previousSection, setPreviousSection] = useState('');
   const { width } = useWindowDimensions();
 
   const name = user?.email;
@@ -102,9 +96,6 @@ const CourseView = ({ route, navigation }) => {
   const getUnitContent = async () => {
     parent.forEach(part => {
       if (section.key === part.key) {
-        setSectionType(section.value.type);
-        console.log(section);
-
         setRenderUrl(
           section.value.student_view_url.replace(/^http:\/\//i, 'https://'),
         );
@@ -112,13 +103,66 @@ const CourseView = ({ route, navigation }) => {
     });
   };
 
+  const getNextVertical = async () => {
+    const verticals = [];
+    parent.forEach(part => {
+      if (part.value.type === 'vertical') {
+        verticals.push(part);
+      }
+    });
+
+    const index = verticals.findIndex(u => u.key === section.key);
+
+    if (index !== -1) {
+      // Found the current vertical
+      if (index < verticals.length - 1) {
+        // There is a next vertical inside the same subsection
+        setNextSection(verticals[index + 1]);
+      } else {
+        // No more units in this subsection
+        setNextSection(null);
+      }
+    }
+  };
+
+  const getPreviousVertical = async () => {
+    const verticals = [];
+    parent.forEach(part => {
+      if (part.value.type === 'vertical') {
+        verticals.push(part);
+      }
+    });
+
+    const index = verticals.findIndex(u => u.key === section.key);
+
+    if (index !== -1) {
+      if (index === 0) {
+        setPreviousSection(null);
+      } else {
+        // Found the current vertical
+        if (index < verticals.length - 1) {
+          // There is a next vertical inside the same subsection
+          setPreviousSection(verticals[index - 1]);
+        } else {
+          // No more units in this subsection
+          setPreviousSection(null);
+        }
+      }
+    }
+  };
+
   useEffect(() => {
     if (isLoggedIn === true) {
       getUnitContent();
+      getNextVertical();
+      getPreviousVertical();
     } else {
       login(name, pass);
     }
   }, [name, pass, isLoggedIn]);
+
+  console.log(nextSection);
+  console.log(previousSection);
 
   return (
     <View
@@ -143,10 +187,59 @@ const CourseView = ({ route, navigation }) => {
           {section.value.display_name}
         </Text>
       </View>
-      
-     
-      <WebView source={{ uri: renderUrl }} style={{ flex: 1, paddingLeft: 10, paddingRight:10 }} />
-      
+
+      <WebView
+        source={{ uri: renderUrl }}
+        style={{ flex: 1, paddingLeft: 10, paddingRight: 10 }}
+      />
+
+      <View className="flex-row items-center p-4 border-b border-gray-200">
+        {previousSection ? (
+          <Button
+            className={`bottom-2 mt-2 `}
+            onPress={() =>
+              navigation.navigate('CourseView', {
+                section: previousSection,
+                parent: parent,
+              })
+            }
+            disabled={loading}
+            loading={loading}
+            variant="primary"
+          >
+            <View className="flex-row items-center justify-center">
+              <Text className="text-white text-center text-xl">
+                Previous Section
+              </Text>
+            </View>
+          </Button>
+        ) : (
+          ''
+        )}
+
+        {nextSection ? (
+          <Button
+            className={`bottom-2 mt-2 ml-4`}
+            onPress={() =>
+              navigation.navigate('CourseView', {
+                section: nextSection,
+                parent: parent,
+              })
+            }
+            disabled={loading}
+            loading={loading}
+            variant="primary"
+          >
+            <View className="flex-row items-center justify-center">
+              <Text className="text-white text-center text-xl">
+                Next Section
+              </Text>
+            </View>
+          </Button>
+        ) : (
+          ''
+        )}
+      </View>
     </View>
   );
 };
