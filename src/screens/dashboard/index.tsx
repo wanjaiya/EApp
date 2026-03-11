@@ -1,5 +1,5 @@
-import { ScrollView, Text, TouchableOpacity, View } from 'react-native';
-import React, { useEffect, useState } from 'react';
+import { ScrollView, Text, TouchableOpacity, View, Alert } from 'react-native';
+import React, { useEffect, useState, useCallback } from 'react';
 import axiosInstance from '../../config/axiosConfig';
 import { useSession } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
@@ -8,33 +8,136 @@ import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import FeatureCard from '../../components/app/FeaturedCard';
 import CourseCard from '../../components/app/CourseCard';
 import { MainTabsScreenProps } from '../../navigation/types';
+import Cookies from '@react-native-cookies/cookies';
+import axios from 'axios';
+import { LMS_BASE_URL, EDX_KEY, EDX_SECRET } from '../../config/env';
+import { useFocusEffect } from '@react-navigation/native';
 
 const Index = ({ navigation }: MainTabsScreenProps) => {
-  const { user, session, sessionId } = useSession();
+  const { user, session, position, signOut } = useSession();
   const colors = useThemeColors();
   const [stats, setStats] = useState([]);
   const [suggested, setSuggested] = useState([]);
   const [latest, setLatest] = useState([]);
   const { currentTheme } = useTheme();
   const [visibleCount, setVisibleCount] = useState(5);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [loading, setLoading] = useState(false);
 
+  const name = user?.email;
+  const pass = position;
 
+  const login = async (email: string, password: string) => {
+    setLoading(true);
+    try {
+      // Step 1: Get CSRF cookie
+      await axios.get(`${LMS_BASE_URL}/user_api/v1/account/login_session/`, {
+        withCredentials: true,
+      });
+
+      const allCookies = await Cookies.get(LMS_BASE_URL);
+      const csrftoken = allCookies?.csrftoken?.value;
+
+      if (!csrftoken) {
+        throw new Error('CSRF token not found');
+      }
+
+      // Step 2: Login (form-encoded)
+      const formData = new URLSearchParams();
+      formData.append('email', email);
+      formData.append('password', password);
+      formData.append('grant_type', 'password');
+      formData.append('client_id', EDX_KEY);
+      formData.append('client_secret', EDX_SECRET);
+
+      await axios.post(
+        `${LMS_BASE_URL}/user_api/v1/account/login_session/`,
+        formData.toString(),
+        {
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'X-CSRFToken': csrftoken,
+          },
+          withCredentials: true,
+        },
+      );
+
+      // Step 3: Read cookies again after login
+      const cookies = await Cookies.get(LMS_BASE_URL);
+
+      if (cookies.sessionid) {
+        // Step 4: Persist cookie for WebView domain
+        await Cookies.set(LMS_BASE_URL, {
+          name: 'edxsessionid',
+          value: cookies.sessionid.value,
+          domain: '.courses.akinsure.com', // very important: must match LMS domain
+          path: '/',
+          version: '1',
+          secure: true,
+          httpOnly: false,
+        });
+
+        setIsLoggedIn(true);
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  
 
   const fetchDashboardData = async () => {
+    setStats([]);
     try {
       const response = await axiosInstance.get('/api/request-dashboard', {
         headers: {
           Authorization: `Bearer ${session}`,
         },
       });
-
-      setStats(response.data);
+      
+      if (response.status === 201) {
+        if (response.data.expired === true) {
+          Alert.alert(
+            'Login',
+            response.data.error,
+            [
+              {
+                text: 'Cancel',
+                style: 'cancel',
+              },
+              {
+                text: 'Login',
+                style: 'destructive',
+                onPress: () => signOut(),
+              },
+            ],
+            { cancelable: true },
+          );
+        } else {
+          Alert.alert(
+            'Error',
+            response.data.error,
+            [
+              {
+                text: 'Cancel',
+                style: 'cancel',
+              },
+            ],
+            { cancelable: true },
+          );
+        }
+      } else {
+        setStats(response.data);
+      }
     } catch (error) {
       console.error('Failed to fetch dashboard data:', error);
     }
   };
 
   const fetchSuggestedCourses = async () => {
+    setSuggested([]);
     try {
       const response = await axiosInstance.get(`/api/suggested-courses/`, {
         headers: {
@@ -42,8 +145,40 @@ const Index = ({ navigation }: MainTabsScreenProps) => {
         },
       });
 
-      console.log(response.data);
-      setSuggested(response.data);
+      if (response.status === 201) {
+        if (response.data.expired === true) {
+          Alert.alert(
+            'Login',
+            response.data.error,
+            [
+              {
+                text: 'Cancel',
+                style: 'cancel',
+              },
+              {
+                text: 'Login',
+                style: 'destructive',
+                onPress: () => signOut(),
+              },
+            ],
+            { cancelable: true },
+          );
+        } else {
+          Alert.alert(
+            'Error',
+            response.data.error,
+            [
+              {
+                text: 'Cancel',
+                style: 'cancel',
+              },
+            ],
+            { cancelable: true },
+          );
+        }
+      } else {
+        setSuggested(response.data);
+      }
     } catch (error) {
       console.log(error);
       console.error('Failed to fetch suggested courses:', error);
@@ -51,6 +186,8 @@ const Index = ({ navigation }: MainTabsScreenProps) => {
   };
 
   const fetchLatestCourses = async () => {
+    setLatest([]);
+
     try {
       const response = await axiosInstance.get(`/api/latest-courses/`, {
         headers: {
@@ -58,7 +195,40 @@ const Index = ({ navigation }: MainTabsScreenProps) => {
         },
       });
 
-      setLatest(response.data);
+      if (response.status === 201) {
+        if (response.data.expired === true) {
+          Alert.alert(
+            'Login',
+            response.data.error,
+            [
+              {
+                text: 'Cancel',
+                style: 'cancel',
+              },
+              {
+                text: 'Login',
+                style: 'destructive',
+                onPress: () => signOut(),
+              },
+            ],
+            { cancelable: true },
+          );
+        } else {
+          Alert.alert(
+            'Error',
+            response.data.error,
+            [
+              {
+                text: 'Cancel',
+                style: 'cancel',
+              },
+            ],
+            { cancelable: true },
+          );
+        }
+      } else {
+        setLatest(response.data);
+      }
     } catch (error) {
       console.log(error);
       console.error('Failed to fetch suggested courses:', error);
@@ -68,13 +238,15 @@ const Index = ({ navigation }: MainTabsScreenProps) => {
   const visibleSuggested = suggested.slice(0, visibleCount);
   const visibleLatest = latest.slice(0, visibleCount);
 
-  useEffect(() => {
-    fetchDashboardData();
-    fetchSuggestedCourses();
-    fetchLatestCourses();
-      console.log(user);
-  }, []);
+  useFocusEffect(
+    useCallback(() => {
+      fetchDashboardData();
+      fetchSuggestedCourses();
+      fetchLatestCourses();
 
+      login(name, pass);
+    }, [name, pass]),
+  );
 
   return (
     <ScrollView
@@ -160,6 +332,7 @@ const Index = ({ navigation }: MainTabsScreenProps) => {
                     onPress={() =>
                       navigation.navigate('CourseDetails', {
                         course: course,
+                        isLoggedIn: isLoggedIn,
                       })
                     }
                     className={`flex-1 max-w-72 h-auto ${
@@ -246,7 +419,10 @@ const Index = ({ navigation }: MainTabsScreenProps) => {
                       ]
                     }
                     onPress={() =>
-                      navigation.navigate('CourseDetails', { course: course })
+                      navigation.navigate('CourseDetails', {
+                        course: course,
+                        isLoggedIn: isLoggedIn,
+                      })
                     }
                     className={`flex-1 max-w-72 h-auto ${
                       index > 0 ? 'ml-4' : ''

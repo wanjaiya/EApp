@@ -1,10 +1,11 @@
-import React, { useRef, useState, useEffect } from 'react';
+import React, { useRef, useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
   TouchableOpacity,
   useWindowDimensions,
   StyleSheet,
+  Alert,
 } from 'react-native';
 import { useSession } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
@@ -12,10 +13,9 @@ import { useThemeColors } from '../../hooks/useThemeColors';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import { WebView } from 'react-native-webview';
 import Cookies from '@react-native-cookies/cookies';
-import axios from 'axios';
+import axiosInstance from '../../config/axiosConfig';
 import Button from '../../components/core/Button';
-
-const LMS_URL = 'https://courses.akinsure.com';
+import { LMS_BASE_URL } from '../../config/env';
 
 type SectionType = 'html' | 'scorm' | 'video' | 'discussion';
 
@@ -24,7 +24,7 @@ const CourseView = ({ route, navigation }) => {
     useSession();
   const colors = useThemeColors();
   const { currentTheme } = useTheme();
-  const { section, parent } = route.params;
+  const { section, parent, course } = route.params;
   const webViewRef = useRef(null);
 
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -32,95 +32,67 @@ const CourseView = ({ route, navigation }) => {
   const [renderUrl, setRenderUrl] = useState('');
   const [nextSection, setNextSection] = useState('');
   const [previousSection, setPreviousSection] = useState('');
+  const [completeSection, setCompleteSection] = useState(false);
+  const [completePrereq, setCompletePrereq] = useState(false);
+
   const { width } = useWindowDimensions();
 
   const name = user?.email;
   const pass = position;
 
-  const login = async (email: string, password: string) => {
-    setLoading(true);
-    try {
-      // Step 1: Get CSRF cookie
-      await axios.get(`${LMS_URL}/user_api/v1/account/login_session/`, {
-        withCredentials: true,
-      });
-
-      const allCookies = await Cookies.get(LMS_URL);
-      const csrftoken = allCookies?.csrftoken?.value;
-
-      if (!csrftoken) {
-        throw new Error('CSRF token not found');
-      }
-
-      // Step 2: Login (form-encoded)
-      const formData = new URLSearchParams();
-      formData.append('email', email);
-      formData.append('password', password);
-
-      await axios.post(
-        `${LMS_URL}/user_api/v1/account/login_session/`,
-        formData.toString(),
-        {
-          headers: {
-            'Content-Type': 'application/x-www-form-urlencoded',
-            'X-CSRFToken': csrftoken,
-          },
-          withCredentials: true,
-        },
-      );
-
-      // Step 3: Read cookies again after login
-      const cookies = await Cookies.get(LMS_URL);
-
-      if (cookies.sessionid) {
-        // Step 4: Persist cookie for WebView domain
-        await Cookies.set(LMS_URL, {
-          name: 'sessionid',
-          value: cookies.sessionid.value,
-          domain: '.courses.akinsure.com', // very important: must match LMS domain
-          path: '/',
-          version: '1',
-          secure: true,
-          httpOnly: false,
-        });
-
-        setIsLoggedIn(true);
-      }
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const getUnitContent = async () => {
-    parent.forEach(part => {
-      if (section.key === part.key) {
-        setRenderUrl(
-          section.value.student_view_url.replace(/^http:\/\//i, 'https://'),
-        );
-      }
-    });
-  };
+  function findParentByChildId(childId) {
+    return parent.find(cour =>
+      cour.value.child_info.children.some(child => child.id === childId),
+    );
+  }
 
   const getNextVertical = async () => {
     const verticals = [];
-    parent.forEach(part => {
-      if (part.value.type === 'vertical') {
-        verticals.push(part);
-      }
+
+    const findParent = findParentByChildId(section.id);
+
+    const coursePart = findParent.value.id.split(':')[1].split('+type@')[0];
+
+    const response = await axiosInstance.get('/api/get-block-grade/', {
+      params: {
+        subSectionId: findParent.value.id,
+        edxSessionId: edxSessionId,
+        courseId: 'course-v1:' + coursePart,
+      },
+      headers: {
+        Authorization: `Bearer ${session}`,
+      },
     });
 
-    const index = verticals.findIndex(u => u.key === section.key);
+    parent.forEach(part => {
+      if (part.value.child_info.category === 'vertical') {
+        verticals.push(part.value.child_info.children[0]);
+      }
+    });
+    // Get the current index of the section from parent
+    const index = verticals.findIndex(u => u.id === section.id);
 
-    if (index !== -1) {
-      // Found the current vertical
-      if (index < verticals.length - 1) {
-        // There is a next vertical inside the same subsection
-        setNextSection(verticals[index + 1]);
+    // Get the last index of the collection
+    const lastIndex = verticals[verticals.length - 1];
+
+    // check if if is quiz (last index)
+    if (section.id === lastIndex.id) {
+      completedCourse(response.data.course);
+    } else {
+      // This is a prerequsite that needs to be completed before proceeding
+      if (response.data.prereq === true) {
+        completeUnit();
       } else {
-        // No more units in this subsection
-        setNextSection(null);
+        if (index !== -1) {
+          // Found the current vertical
+
+          if (index < verticals.length - 1) {
+            navigation.navigate('CourseView', {
+              section: verticals[index + 1],
+              parent: parent,
+            });
+          }
+        }
       }
     }
   };
@@ -128,19 +100,19 @@ const CourseView = ({ route, navigation }) => {
   const getPreviousVertical = async () => {
     const verticals = [];
     parent.forEach(part => {
-      if (part.value.type === 'vertical') {
-        verticals.push(part);
+      if (part.value.child_info.category === 'vertical') {
+        verticals.push(part.value.child_info.children[0]);
       }
     });
 
-    const index = verticals.findIndex(u => u.key === section.key);
+    const index = verticals.findIndex(u => u.id === section.id);
 
     if (index !== -1) {
       if (index === 0) {
         setPreviousSection(null);
       } else {
         // Found the current vertical
-        if (index < verticals.length - 1) {
+        if (index <= verticals.length - 1) {
           // There is a next vertical inside the same subsection
           setPreviousSection(verticals[index - 1]);
         } else {
@@ -151,26 +123,54 @@ const CourseView = ({ route, navigation }) => {
     }
   };
 
-  useEffect(() => {
-    if (isLoggedIn === true) {
-      getUnitContent();
-      getNextVertical();
-      getPreviousVertical();
-    } else {
-      login(name, pass);
-    }
-  }, [name, pass, isLoggedIn]);
+  function completeUnit() {
+    Alert.alert(
+      'Alert',
+      `Kindly complete this section by attaining 50% and above before proceeding to the next section`,
+      [
+        {
+          text: 'Okay',
+          style: 'cancel',
+        },
+      ],
+      { cancelable: true },
+    );
+  }
 
-  console.log(nextSection);
-  console.log(previousSection);
+  function completedCourse(mcourse) {
+    Alert.alert(
+      'Congratulations',
+      `You have reached the end of the course. Click proceed to check your grade.`,
+      [
+        {
+          text: 'Cancel',
+          style: 'cancel',
+        },
+        {
+          text: 'Proceed',
+          style: 'destructive',
+          onPress: () =>
+            navigation.navigate('CourseDetails', {
+              course: mcourse,
+              update: true,
+            }),
+        },
+      ],
+      { cancelable: true },
+    );
+  }
+
+  useEffect(() => {
+    setCompletePrereq(false);
+    getPreviousVertical();
+    if (section) {
+      setRenderUrl(section.embed_lms_url);
+    }
+  }, [section]); // runs every time `count` changes
 
   return (
-    <View
-      className={`flex-1 ${
-        currentTheme === 'dark' ? 'bg-gray-900' : 'bg-white'
-      }`}
-    >
-      <View className="flex-row items-center p-4 border-b border-gray-200">
+    <View className={`flex-1`}>
+      <View className="flex-row items-center p-4 border-b border-gray-200 bg-white">
         <TouchableOpacity onPress={() => navigation.goBack()}>
           <MaterialIcons
             name="arrow-back"
@@ -179,24 +179,22 @@ const CourseView = ({ route, navigation }) => {
             style={{ marginRight: 20, paddingRight: 10 }}
           />
         </TouchableOpacity>
-        <Text
-          className={`text-lg font-semibold ml-3 ${
-            currentTheme === 'dark' ? 'text-white' : 'text-gray-800'
-          }`}
-        >
-          {section.value.display_name}
+        <Text className={`text-lg font-semibold ml-3 text-gray-800`}>
+          {section.display_name}
         </Text>
       </View>
 
-      <WebView
-        source={{ uri: renderUrl }}
-        style={{ flex: 1, paddingLeft: 10, paddingRight: 10 }}
-      />
+      <View className={`flex-1 px-3`}>
+        <WebView
+          source={{ uri: renderUrl }}
+          style={{ flex: 1, paddingLeft: 20, paddingRight: 10 }}
+        />
+      </View>
 
-      <View className="flex-row items-center p-4 border-b border-gray-200">
+      <View className="flex-row items-center p-2 border-b border-gray-200 bg-white">
         {previousSection ? (
           <Button
-            className={`bottom-2 mt-2 `}
+            className={`ml-2 `}
             onPress={() =>
               navigation.navigate('CourseView', {
                 section: previousSection,
@@ -208,7 +206,7 @@ const CourseView = ({ route, navigation }) => {
             variant="primary"
           >
             <View className="flex-row items-center justify-center">
-              <Text className="text-white text-center text-xl">
+              <Text className="text-white text-center text-sm">
                 Previous Section
               </Text>
             </View>
@@ -217,28 +215,17 @@ const CourseView = ({ route, navigation }) => {
           ''
         )}
 
-        {nextSection ? (
-          <Button
-            className={`bottom-2 mt-2 ml-4`}
-            onPress={() =>
-              navigation.navigate('CourseView', {
-                section: nextSection,
-                parent: parent,
-              })
-            }
-            disabled={loading}
-            loading={loading}
-            variant="primary"
-          >
-            <View className="flex-row items-center justify-center">
-              <Text className="text-white text-center text-xl">
-                Next Section
-              </Text>
-            </View>
-          </Button>
-        ) : (
-          ''
-        )}
+        <Button
+          className={`ml-4`}
+          onPress={() => getNextVertical()}
+          disabled={loading}
+          loading={loading}
+          variant="primary"
+        >
+          <View className="flex-row items-center justify-center">
+            <Text className="text-white text-center text-sm">Next Section</Text>
+          </View>
+        </Button>
       </View>
     </View>
   );

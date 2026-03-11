@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import {
   View,
   Text,
@@ -18,9 +18,14 @@ import { useThemeColors } from '../../hooks/useThemeColors';
 import RenderHTML from 'react-native-render-html';
 import Button from '../../components/core/Button';
 import axios from 'axios';
+import { getCourseData } from '../../api/edx';
+import Cookies from '@react-native-cookies/cookies';
+import { useFocusEffect } from '@react-navigation/native';
+import { MainTabsScreenProps } from '../../navigation/types';
+import { dashboard } from '../dashboard/index';
 
-const Details = ({ route, navigation }) => {
-  const { user, session, edxSessionId } = useSession();
+const Details = ({ route, navigation }: MainTabsScreenProps) => {
+  const { user, session, edxSessionId, signOut } = useSession();
   const colors = useThemeColors();
   const { currentTheme } = useTheme();
   const [details, setDetails] = useState([]);
@@ -31,20 +36,14 @@ const Details = ({ route, navigation }) => {
   const [sequential, setSequential] = useState([]);
 
   const { width } = useWindowDimensions();
-  const { course } = route.params;
+  const { course, update } = route.params;
   const courseId = course.course_id;
   const pieces = course.effort?.split(':');
   const outline = course.more_info;
   const [expanded, setExpanded] = useState(null);
+  const [locked, setLocked] = useState('');
 
-  const html = details.overview;
-  const sections = Object.entries(sequential).map(([key, value]) => ({
-    key,
-    value,
-  }));
-
-
-  console.log(sections);
+  const LMS_URL = 'https://courses.akinsure.com';
 
   const toggleExpand = id => {
     setExpanded(expanded === id ? null : id);
@@ -68,7 +67,7 @@ const Details = ({ route, navigation }) => {
       if (response.data.status == true) {
         Alert.alert('Success', response.data.message, [
           {
-            text: 'OK',
+            text: 'Take Course',
             onPress: () => fetchCourseData(), // 🔁 Refresh trigger
           },
         ]);
@@ -101,25 +100,66 @@ const Details = ({ route, navigation }) => {
       setPageLoading(true);
       setDetails([]);
       setSequential([]);
+
+      const allCookies = await Cookies.get(LMS_URL);
+      const other = await Cookies.get('edxsessionid');
+
+      console.log(edxSessionId);
+
       const response = await axiosInstance.get('/api/get-course-data/', {
         params: {
           course_id: courseId,
+          edxSessionId: edxSessionId,
         },
         headers: {
           Authorization: `Bearer ${session}`,
         },
       });
 
-      setDetails(response.data);
-      setSequential(response.data.sequential);
 
-      // Optional: increment refresh key if needed
-      setRefreshKey(prev => prev + 1);
+      console.log(response);
 
+      console.log(course);
+
+      if (response.status === 201) {
+        if (response.data.expired === true) {
+          Alert.alert(
+            'Login',
+            response.data.error,
+            [
+              {
+                text: 'Cancel',
+                style: 'cancel',
+              },
+              {
+                text: 'Login',
+                style: 'destructive',
+                onPress: () => signOut(),
+              },
+            ],
+            { cancelable: true },
+          );
+        } else {
+          Alert.alert(
+            'Error',
+            response.data.error,
+            [
+              {
+                text: 'Cancel',
+                style: 'cancel',
+              },
+            ],
+            { cancelable: true },
+          );
+        }
+      } else {
+        setDetails(response.data);
+        setSequential(response.data.sequential.children);
+      }
     } catch (error) {
-      console.error('Failed to course additional data:', error);
+      console.log(error);
 
-    
+      console.error('Failed to course additional data:', error);
     } finally {
       setPageLoading(false);
     }
@@ -132,6 +172,29 @@ const Details = ({ route, navigation }) => {
     const y = date.getFullYear();
     return `${d}-${m}-${y}`;
   }
+
+  function completePrevious(Item) {
+    Alert.alert(
+      'Alert',
+      `Kindly complete ${Item.value.display_name} before proceeding to the next section`,
+      [
+        {
+          text: 'Okay',
+          style: 'cancel',
+        },
+      ],
+      { cancelable: true },
+    );
+  }
+
+  const html = details.overview;
+
+  const sections = Object.entries(sequential).map(([key, value]) => ({
+    key,
+    value,
+  }));
+
+
 
   useEffect(() => {
     fetchCourseData();
@@ -150,20 +213,20 @@ const Details = ({ route, navigation }) => {
         <>
           {/* Header */}
           <View className="flex-row items-center p-4 border-b border-gray-200">
-            <TouchableOpacity onPress={() => navigation.goBack()}>
+            <TouchableOpacity onPress={() => navigation.popToTop()}>
               <MaterialIcons
                 name="arrow-back"
                 size={20}
                 color={colors.primary}
-                style={{ marginRight: 20, paddingRight: 10 }}
+                style={{ marginRight: 2, paddingRight: 2 }}
               />
             </TouchableOpacity>
             <Text
-              className={`text-lg font-semibold  ${
+              className={`text-md font-semibold  ${
                 currentTheme === 'dark' ? 'text-white' : 'text-gray-800'
               }`}
             >
-              {course.display_name}
+              {details.name}
             </Text>
           </View>
 
@@ -171,7 +234,7 @@ const Details = ({ route, navigation }) => {
           <View className="flex flex-row mt-2 ml-2 mr-2">
             {/*Course Image*/}
             <Image
-              source={{ uri: course.course_image_uri }}
+              source={{ uri: details.course_image_uri }}
               style={{ width: '100%', height: 200 }}
               resizeMode="contain"
             />
@@ -199,16 +262,16 @@ const Details = ({ route, navigation }) => {
                 currentTheme === 'dark' ? 'text-white' : 'text-gray-800'
               }`}
             >
-              {course.completion_status
-                ? course.completion_status
-                : course.enrolled == 1
+              {details.completion_status
+                ? details.completion_status
+                : details.enrolled == 1
                 ? 'Enrolled'
                 : 'Not Enrolled'}
             </Text>
           </View>
 
           {/*Completion Date and Score*/}
-          {course.completion_date ? (
+          {details.completion_date ? (
             <>
               <View className=" flex-row justify-between mt-3">
                 <Text
@@ -216,7 +279,7 @@ const Details = ({ route, navigation }) => {
                     currentTheme === 'dark' ? 'text-white' : 'text-gray-800'
                   }`}
                 >
-                  {`Score: ${Math.round(course.score * 100)}%`}
+                  {`Score: ${Math.round(details.score * 100)}%`}
                 </Text>
 
                 <Text
@@ -224,7 +287,7 @@ const Details = ({ route, navigation }) => {
                     currentTheme === 'dark' ? 'text-white' : 'text-gray-800'
                   }`}
                 >
-                  {`Completion Date: ${formatToDate(course.completion_date)}`}
+                  {`Completion Date: ${formatToDate(details.completion_date)}`}
                 </Text>
               </View>
             </>
@@ -233,7 +296,7 @@ const Details = ({ route, navigation }) => {
           )}
 
           {/*Course Description*/}
-          <View className="p-4 pb-2 flex items-center justify-center">
+          <View className="p-4 pb-2  flex items-center justify-center">
             <RenderHTML
               className={`${
                 currentTheme === 'dark' ? 'text-white' : 'text-gray-800'
@@ -242,44 +305,52 @@ const Details = ({ route, navigation }) => {
               source={{ html }}
               baseStyle={{
                 color: currentTheme === 'dark' ? '#ffffff' : '#1F2937',
-                fontSize: 16,
+                fontSize: 14,
               }}
             />
           </View>
           {/*Course Outline*/}
-          {course.enrolled == 0 ? (
-            <View className="p-4 pt-0">
-              <Text
-                className={`text-2xl font-bold mb-2 ${
-                  currentTheme === 'dark' ? 'text-white' : 'text-gray-800'
-                }`}
-              >
-                What you will learn
-              </Text>
-              <RenderHTML
-                className={`${
-                  currentTheme === 'dark' ? 'text-white' : 'text-gray-800'
-                }`}
-                contentWidth={width}
-                source={{ html: outline }}
-                baseStyle={{
-                  color: currentTheme === 'dark' ? '#ffffff' : '#1F2937',
-                  fontSize: 16,
-                }}
-                tagsStyles={{
-                  ul: {
-                    paddingLeft: 10,
-                    marginVertical: 4,
-                    listStyleType: 'disc',
-                  },
-                  li: { marginVertical: 8 },
-                }}
-              />
-            </View>
+          {details.enrolled == 0 ? (
+            <>
+              {outline ? (
+                <View className="p-4 pt-0">
+                  <Text
+                    className={`text-lg font-bold mb-2 ${
+                      currentTheme === 'dark' ? 'text-white' : 'text-gray-800'
+                    }`}
+                  >
+                    What you will learn
+                  </Text>
+                  <RenderHTML
+                    className={`${
+                      currentTheme === 'dark' ? 'text-white' : 'text-gray-800'
+                    }`}
+                    contentWidth={width}
+                    source={{ html: outline }}
+                    baseStyle={{
+                      color: currentTheme === 'dark' ? '#ffffff' : '#1F2937',
+                      fontSize: 14,
+                    }}
+                    tagsStyles={{
+                      ul: {
+                        paddingLeft: 10,
+                        marginVertical: 4,
+                        listStyleType: 'disc',
+                      },
+                      li: { marginVertical: 8 },
+                    }}
+                  />
+                </View>
+              ) : (
+                <View className="p-4 pt-0 mb-4">
+                  <></>
+                </View>
+              )}
+            </>
           ) : (
             <View className="p-4 pt-0">
               <Text
-                className={`text-2xl font-bold mb-2 mt-4 ${
+                className={`text-lg font-bold mb-2 mt-4 ${
                   currentTheme === 'dark' ? 'text-white' : 'text-gray-800'
                 }`}
               >
@@ -288,79 +359,182 @@ const Details = ({ route, navigation }) => {
 
               <FlatList
                 data={sections}
-                keyExtractor={item => item.value.id}
                 scrollEnabled={false}
-                renderItem={({ item }) => {
-                  if (item.value.type === 'sequential') {
-                    return (
-                      <View>
-                        {/* Parent item */}
-                        <TouchableOpacity
-                          onPress={() => toggleExpand(item.value.id)}
-                          style={{
-                            paddingVertical: 10,
-                            borderBottomWidth: 1,
-                            borderColor: '#ccc',
-                          }}
-                        >
-                          <Text
-                            className={`text-lg font-bold ${
-                              currentTheme === 'dark'
-                                ? 'text-white'
-                                : 'text-gray-800'
-                            }`}
-                            style={{ fontSize: 18, fontWeight: '600' }}
-                          >
-                            {item.value.display_name}
-                          </Text>
-                        </TouchableOpacity>
+                style={{ marginLeft: 4 }}
+                keyExtractor={(item, index) => index.toString()}
+                renderItem={({ item, index }) => {
+                  if (item.value.category === 'sequential') {
+                    const prevItem = sections
+                      .slice(0, index)
+                      .reverse()
+                      .find(i => i.value.has_graded_assignment);
 
-                        {/* Children (shown only if expanded) */}
-                        {expanded === item.value.id && (
-                          <View style={{ paddingLeft: 16 }}>
-                            {item.value.children.map((child, index) => {
-                              const match = sections.find(
-                                obj => obj.key === child,
-                              );
-                              return (
-                                <TouchableOpacity
-                                  key={index}
-                                  onPress={() =>
-                                    navigation.navigate('CourseView', {
-                                      section: match,
-                                      parent: sections,
-                                    })
-                                  }
-                                  style={{ paddingVertical: 8 }}
-                                >
-                                  <Text
-                                    className={`${
-                                      currentTheme === 'dark'
-                                        ? 'text-white'
-                                        : 'text-gray-800'
-                                    }`}
-                                    style={{ fontSize: 16 }}
-                                  >
-                                    {match.value.display_name !== 'Wrap Up'
-                                      ? match.value.display_name
-                                      : ''}
-                                  </Text>
-                                </TouchableOpacity>
-                              );
-                            })}
+                    if (item.value.prereq) {
+                      if (prevItem?.value.percent_graded >= 0.5) {
+                        return (
+                          <View>
+                            {/* Parent item */}
+                            <TouchableOpacity
+                              onPress={() => toggleExpand(item.value.id)}
+                              style={{
+                                paddingVertical: 10,
+                                borderBottomWidth: 1,
+                                borderColor: '#ccc',
+                              }}
+                            >
+                              <Text
+                                className={`text-md font-bold ${
+                                  currentTheme === 'dark'
+                                    ? 'text-white'
+                                    : 'text-gray-800'
+                                }`}
+                                style={{ fontSize: 16, fontWeight: '600' }}
+                              >
+                                {item.value.display_name}
+                              </Text>
+                            </TouchableOpacity>
+
+                            {/* Children (shown only if expanded) */}
+                            {expanded === item.value.id && (
+                              <View style={{ paddingLeft: 16 }}>
+                                {item.value.child_info.children.map(
+                                  (child, index) => {
+                                    return (
+                                      <TouchableOpacity
+                                        key={index}
+                                        onPress={() =>
+                                          navigation.navigate('CourseView', {
+                                            section: child,
+                                            parent: sections,
+                                            course: course,
+                                          })
+                                        }
+                                        style={{ paddingVertical: 8 }}
+                                      >
+                                        <Text
+                                          className={`${
+                                            currentTheme === 'dark'
+                                              ? 'text-white'
+                                              : 'text-gray-800'
+                                          }`}
+                                          style={{ fontSize: 14 }}
+                                        >
+                                          {child.display_name !== 'Wrap Up'
+                                            ? child.display_name
+                                            : ''}
+                                        </Text>
+                                      </TouchableOpacity>
+                                    );
+                                  },
+                                )}
+                              </View>
+                            )}
                           </View>
-                        )}
-                      </View>
-                    );
+                        );
+                      } else {
+                        return (
+                          <View>
+                            <TouchableOpacity
+                              onPress={() => completePrevious(prevItem)}
+                              style={{
+                                paddingVertical: 10,
+                                borderBottomWidth: 1,
+                                borderColor: '#ccc',
+                                flex: 1,
+                                flexDirection: 'row',
+                              }}
+                            >
+                              <MaterialIcons
+                                name="lock"
+                                size={20}
+                                color={colors.primary}
+                                style={{ paddingRight: 3, marginTop: 2 }}
+                              />
+                              <Text
+                                className={`text-md font-bold ${
+                                  currentTheme === 'dark'
+                                    ? 'text-white'
+                                    : 'text-gray-800'
+                                }`}
+                                style={{ fontSize: 16, fontWeight: '600' }}
+                              >
+                                {item.value.display_name}
+                              </Text>
+                            </TouchableOpacity>
+                          </View>
+                        );
+                      }
+                    } else {
+                      return (
+                        <View>
+                          {/* Parent item */}
+                          <TouchableOpacity
+                            onPress={() => toggleExpand(item.value.id)}
+                            style={{
+                              paddingVertical: 10,
+                              borderBottomWidth: 1,
+                              borderColor: '#ccc',
+                            }}
+                          >
+                            <Text
+                              className={`text-md font-bold ${
+                                currentTheme === 'dark'
+                                  ? 'text-white'
+                                  : 'text-gray-800'
+                              }`}
+                              style={{ fontSize: 16, fontWeight: '600' }}
+                            >
+                              {item.value.display_name}
+                            </Text>
+                          </TouchableOpacity>
+
+                          {/* Children (shown only if expanded) */}
+                          {expanded === item.value.id && (
+                            <View style={{ paddingLeft: 16 }}>
+                              {item.value.child_info.children.map(
+                                (child, index) => {
+                                  return (
+                                    <TouchableOpacity
+                                      key={index}
+                                      onPress={() =>
+                                        navigation.navigate('CourseView', {
+                                          section: child,
+                                          parent: sections,
+                                          course: course,
+                                        })
+                                      }
+                                      style={{ paddingVertical: 8 }}
+                                    >
+                                      <Text
+                                        className={`${
+                                          currentTheme === 'dark'
+                                            ? 'text-white'
+                                            : 'text-gray-800'
+                                        }`}
+                                        style={{ fontSize: 14 }}
+                                      >
+                                        {child.display_name !== 'Wrap Up'
+                                          ? child.display_name
+                                          : ''}
+                                      </Text>
+                                    </TouchableOpacity>
+                                  );
+                                },
+                              )}
+                            </View>
+                          )}
+                        </View>
+                      );
+                    }
                   }
                 }}
               />
             </View>
           )}
 
-          {course.enrolled == 0 ? (
+          {details.enrolled == 0 ? (
             <Button
-              className={`bottom-6 w-full mt-2 `}
+              className={` w-full mt-2 `}
               onPress={handleEnrollment}
               disabled={loading}
               loading={loading}

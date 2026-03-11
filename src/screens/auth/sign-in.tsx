@@ -1,6 +1,7 @@
 import Button from '../../components/core/Button';
 import Input from '../../components/core/Input';
 import axiosInstance from '../../config/axiosConfig';
+import MicrosoftButton from '../../components/core/MicrosoftButton';
 import { useSession } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
 import axios from 'axios';
@@ -12,7 +13,14 @@ import {
   GoogleSigninButton,
   statusCodes,
 } from '@react-native-google-signin/google-signin';
-import { IOS_CLIENT_ID,WEB_CLIENT_ID, ANDROID_CLIENT_ID } from '../../config/env';
+import AzureAuth from 'react-native-azure-auth';
+import { authorize } from 'react-native-app-auth';
+import {
+  IOS_CLIENT_ID,
+  WEB_CLIENT_ID,
+  AZURE_CLIENT_ID,
+  AZURE_REDIRECT_URI,
+} from '../../config/env';
 
 GoogleSignin.configure({
   webClientId: WEB_CLIENT_ID,
@@ -21,6 +29,13 @@ GoogleSignin.configure({
   forceCodeForRefreshToken: true,
   iosClientId: IOS_CLIENT_ID,
 });
+
+const azureAuth = new AzureAuth({
+  clientId: AZURE_CLIENT_ID,
+  tenant: '987a006e-3266-486c-93e2-96e40fa9341d',
+});
+
+
 
 const Signin = ({ navigation }: SigninScreenProps) => {
   const { signIn } = useSession();
@@ -54,7 +69,7 @@ const Signin = ({ navigation }: SigninScreenProps) => {
         response.data.edxinstanceId,
         response.data.sessionId,
         response.data.edxUser,
-        response.data.position
+        response.data.position,
       );
 
       navigation.navigate('Welcome');
@@ -77,33 +92,27 @@ const Signin = ({ navigation }: SigninScreenProps) => {
 
   const handleGoogle = async () => {
     setLoading(true);
-  try {
-    await GoogleSignin.hasPlayServices();
-    const response = await GoogleSignin.signIn();
-    if (response) {
-      const result = await axiosInstance.post('/api/googleLogin', {
-        email: response.data.user.email,
-        googleId : response.data.user.id
-      });
+    try {
+      await GoogleSignin.hasPlayServices();
+      const response = await GoogleSignin.signIn();
+      if (response) {
+        const result = await axiosInstance.post('/api/googleLogin', {
+          email: response.data.user.email,
+          googleId: response.data.user.id,
+        });
 
-     const Rs = await signIn(
-        result.data.token,
-        result.data.user,
-        result.data.edxinstanceId,
-         result.data.sessionId,
-         result.data.edxUser,
-         result.data.position
-      );
-
-     // if(Rs){
-     //  navigation.navigate('MainTabs');
-     // }
-     // navigation.navigate('MainTabs');
-
-    } else {
-      // sign in was cancelled by user
-    }
-  } catch (error) {
+        const Rs = await signIn(
+          result.data.token,
+          result.data.user,
+          result.data.edxinstanceId,
+          result.data.sessionId,
+          result.data.edxUser,
+          result.data.position,
+        );
+      } else {
+        // sign in was cancelled by user
+      }
+    } catch (error) {
       if (axios.isAxiosError(error)) {
         const responseData = error.response?.data;
         if (responseData?.errors) {
@@ -118,7 +127,61 @@ const Signin = ({ navigation }: SigninScreenProps) => {
     } finally {
       setLoading(false);
     }
+  };
 
+  const handleMicrosoft = async () => {
+    setLoading(true);
+    try {
+      let tokens = await azureAuth.webAuth.authorize({
+        scope: 'profile User.Read',
+      });
+
+      // let info = await azureAuth.auth.msGraphRequest({token: tokens.accessToken, path: '/me'})
+
+      // // Get user info from Microsoft Graph API
+      const userInfoResponse = await axios.get(
+        'https://graph.microsoft.com/v1.0/me',
+        {
+          headers: {
+            Authorization: `Bearer ${tokens.accessToken}`,
+          },
+        },
+      );
+
+      const userInfo = userInfoResponse.data;
+
+      // Send to backend
+      const backendResult = await axiosInstance.post('/api/microsoftLogin', {
+        email: userInfo.mail,
+        microsoftId: userInfo.id,
+      });
+
+      if (backendResult.data.error) {
+        Alert.alert('Error', backendResult.data.error);
+      }
+
+      await signIn(
+        backendResult.data.token,
+        backendResult.data.user,
+        backendResult.data.edxinstanceId,
+        backendResult.data.sessionId,
+        backendResult.data.edxUser,
+        backendResult.data.position,
+      );
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        const responseData = error.response?.data;
+        if (responseData?.message) {
+          Alert.alert('Error', responseData.message);
+        } else {
+          Alert.alert('Error', 'Microsoft sign-in failed');
+        }
+      } else {
+        Alert.alert('Error', 'Unable to sign in with Microsoft');
+      }
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -192,6 +255,8 @@ const Signin = ({ navigation }: SigninScreenProps) => {
           onPress={handleGoogle}
           disabled={loading}
         />
+
+        <MicrosoftButton onPress={handleMicrosoft} disabled={loading} />
       </View>
     </View>
   );

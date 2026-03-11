@@ -59,7 +59,7 @@ const CourseCard: React.FC<CourseCardProps> = ({
           resizeMode="cover"
         />
       </View>
-      <View style={{ minHeight: 120 }}>
+      <View style={{ minHeight: 78 }}>
         <View className="flex flex-row w-full p-3 pt-4">
           <Text
             className={`text-md font-bold  ${
@@ -70,7 +70,7 @@ const CourseCard: React.FC<CourseCardProps> = ({
             {display_name}
           </Text>
         </View>
-        <View className="absolute bottom-4 left-4 right-4 flex-row justify-between">
+        <View className="absolute bottom-2 left-4 right-4 flex-row justify-between">
           <View className="flex flex-row">
             <MaterialIcons
               name="access-time"
@@ -102,7 +102,7 @@ const CourseCard: React.FC<CourseCardProps> = ({
 const styles = StyleSheet.create({
   image: {
     alignSelf: 'center',
-    height: '%',
+    height: '50%',
     width: '100%',
   },
 });

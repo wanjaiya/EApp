@@ -1,4 +1,11 @@
-import { ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import {
+  ScrollView,
+  Text,
+  TouchableOpacity,
+  View,
+  ActivityIndicator,
+  Alert,
+} from 'react-native';
 import React, { useEffect, useState } from 'react';
 import axiosInstance from '../../config/axiosConfig';
 import { useSession } from '../../context/AuthContext';
@@ -9,24 +16,63 @@ import CourseCard from '../../components/app/CourseCard';
 import { MainTabsScreenProps } from '../../navigation/types';
 
 const List = ({ route, navigation }: MainTabsScreenProps) => {
-  const { user, session } = useSession();
+  const { user, session,signOut } = useSession();
   const colors = useThemeColors();
   const { currentTheme } = useTheme();
   const [courses, setCourses] = useState([]);
   const { list } = route.params || {};
+  const [pageLoading, setPageLoading] = useState(false);
 
   const fetchAllCourses = async () => {
+    setCourses([]);
     try {
+      setPageLoading(true);
       const response = await axiosInstance.get(`/api/all-courses/`, {
         headers: {
           Authorization: `Bearer ${session}`,
         },
       });
 
-      setCourses(response.data);
+      if (response.status === 201) {
+        if (response.data.expired === true) {
+          Alert.alert(
+            'Login',
+            response.data.error,
+            [
+              {
+                text: 'Cancel',
+                style: 'cancel',
+              },
+              {
+                text: 'Login',
+                style: 'destructive',
+                onPress: () => signOut(),
+              },
+            ],
+            { cancelable: true },
+          );
+        } else {
+          Alert.alert(
+            'Error',
+            response.data.error,
+            [
+              {
+                text: 'Cancel',
+                style: 'cancel',
+              },
+            ],
+            { cancelable: true },
+          );
+        }
+      } else {
+        setCourses(response.data);
+      }
     } catch (error) {
+      
       console.log(error);
       console.error('Failed to fetch suggested courses:', error);
+    } finally {
+      setPageLoading(false);
     }
   };
 
@@ -66,33 +112,37 @@ const List = ({ route, navigation }: MainTabsScreenProps) => {
       </View>
 
       {/* Body */}
-      <View className="flex flex-col mb-4 items-center justify-center mt-5">
-        {courses.map((course, index) => (
-          <CourseCard
-            key={index}
-            display_name={course.display_name}
-            effort={course.effort}
-            course_image_uri={course.course_image_uri}
-            course_id={course.course_id}
-            enrolled={course.enrolled == 1 ? 'Enrolled' : 'Not Enrolled'}
-            gradient={
-              [colors.card, colors.surface] as readonly [
-                string,
-                string,
-                ...string[],
-              ]
-            }
-            onPress={() =>
-              navigation.navigate('CourseDetails', {
-                course: course,
-              })
-            }
-            className={` w-full h-auto`}
-            style={{ width: '90%', marginBottom: 16 }}
-            imageStyle={{ width: '100%', height: 200 }}
-          />
-        ))}
-      </View>
+      {pageLoading ? (
+        <ActivityIndicator size="large" color="#0000ff" />
+      ) : (
+        <View className="flex flex-col mb-4 items-center justify-center mt-5 px-2">
+          {courses.map((course, index) => (
+            <CourseCard
+              key={index}
+              display_name={course.display_name}
+              effort={course.effort}
+              course_image_uri={course.course_image_uri}
+              course_id={course.course_id}
+              enrolled={course.enrolled == 1 ? 'Enrolled' : 'Not Enrolled'}
+              gradient={
+                [colors.card, colors.surface] as readonly [
+                  string,
+                  string,
+                  ...string[],
+                ]
+              }
+              onPress={() =>
+                navigation.navigate('CourseDetails', {
+                  course: course,
+                })
+              }
+              className={` w-full h-auto`}
+              style={{ width: '90%', marginBottom: 25 }}
+              imageStyle={{ width: '100%', height: 120 }}
+            />
+          ))}
+        </View>
+      )}
     </ScrollView>
   );
 };

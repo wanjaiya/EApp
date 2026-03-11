@@ -1,5 +1,12 @@
-import { ScrollView, Text, TouchableOpacity, View } from 'react-native';
-import React, { useEffect, useState } from 'react';
+import {
+  ScrollView,
+  Text,
+  TouchableOpacity,
+  View,
+  ActivityIndicator,
+  Alert,
+} from 'react-native';
+import React, { useEffect, useState,useCallback } from 'react';
 import axiosInstance from '../../config/axiosConfig';
 import { useSession } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
@@ -7,15 +14,19 @@ import { useThemeColors } from '../../hooks/useThemeColors';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import CourseCard from '../../components/app/CourseCard';
 import { MainTabsScreenProps } from '../../navigation/types';
+import { useFocusEffect } from '@react-navigation/native';
 
 const InProgress = ({ navigation }: MainTabsScreenProps) => {
   const { user, session } = useSession();
   const colors = useThemeColors();
   const [courses, setCourses] = useState([]);
   const { currentTheme } = useTheme();
+  const [pageLoading, setPageLoading] = useState(false);
 
   const fetchInProgressCourses = async () => {
+    setCourses([]);
     try {
+      setPageLoading(true);
       const response = await axiosInstance.get(`/api/in-progress/`, {
         headers: {
           Authorization: `Bearer ${session}`,
@@ -23,14 +34,22 @@ const InProgress = ({ navigation }: MainTabsScreenProps) => {
       });
 
       setCourses(response.data);
+
+
+
     } catch (error) {
+      Alert.alert('Error', 'Failed to fetch courses in progress.' + error);
       console.log(error);
       console.error('Failed to fetch suggested courses:', error);
+    } finally {
+      setPageLoading(false);
     }
   };
-  useEffect(() => {
+useFocusEffect(
+    useCallback(() => {
     fetchInProgressCourses();
-  }, []);
+  }, [])
+);
   return (
     <ScrollView
       vertical
@@ -53,38 +72,56 @@ const InProgress = ({ navigation }: MainTabsScreenProps) => {
             currentTheme === 'dark' ? 'text-white' : 'text-gray-800'
           }`}
         >
-          Course List
+          Courses in progress
         </Text>
       </View>
 
       {/* Body */}
-      <View className="flex flex-col mb-4 items-center justify-center mt-5">
-        {courses.map((course, index) => (
-          <CourseCard
-            key={index}
-            display_name={course.display_name}
-            effort={course.effort}
-            course_image_uri={course.course_image_uri}
-            course_id={course.course_id}
-            enrolled={course.enrolled == 1 ? 'Enrolled' : 'Not Enrolled'}
-            gradient={
-              [colors.card, colors.surface] as readonly [
-                string,
-                string,
-                ...string[],
-              ]
-            }
-            onPress={() =>
-              navigation.navigate('CourseDetails', {
-                course: course,
-              })
-            }
-            className={` w-full h-auto`}
-            style={{ width: '90%', marginBottom: 16 }}
-            imageStyle={{ width: '100%', height: 200 }}
-          />
-        ))}
-      </View>
+      {pageLoading ? (
+        <ActivityIndicator size="large" color="#0000ff" />
+      ) : (
+        <View className="flex flex-col mb-4 items-center justify-center mt-5 px-2">
+          {!courses || courses.length !== 0 ? (
+            <>
+              {courses.map((course, index) => (
+                <CourseCard
+                  key={index}
+                  display_name={course.display_name}
+                  effort={course.effort}
+                  course_image_uri={course.course_image_uri}
+                  course_id={course.course_id}
+                  enrolled={course.enrolled == 1 ? 'Enrolled' : 'Not Enrolled'}
+                  gradient={
+                    [colors.card, colors.surface] as readonly [
+                      string,
+                      string,
+                      ...string[],
+                    ]
+                  }
+                  onPress={() =>
+                    navigation.navigate('CourseDetails', {
+                      course: course,
+                    })
+                  }
+                  className={` w-full h-auto`}
+                  style={{ width: '90%', marginBottom: 25 }}
+                  imageStyle={{ width: '100%', height: 120 }}
+                />
+              ))}
+            </>
+          ) : (
+            <View className="flex flex-row mt-5 items-center justify-center">
+              <Text
+                className={`text-2xl font-bold mb-2 ${
+                  currentTheme === 'dark' ? 'text-white' : 'text-gray-800'
+                }`}
+              >
+                No courses in progress
+              </Text>
+            </View>
+          )}
+        </View>
+      )}
     </ScrollView>
   );
 };

@@ -79,7 +79,7 @@ const Button: React.FC<ButtonProps> = ({
         end={{ x: 1, y: 1 }}
         className="px-4 py3.5"
       >
-        <View className="flex-row items-center justify-center py-4">
+        <View className="flex-row items-center justify-center py-2">
           {loading && (
             <ActivityIndicator size="small" color="#ffffff" className="mr-2" />
           )}

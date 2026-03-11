@@ -7,7 +7,7 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>en</string>
 	<key>CFBundleDisplayName</key>
-	<string>ErevukaApp</string>
+	<string>AKIKnowledgeApp</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -56,6 +56,12 @@
     <key>CFBundleURLSchemes</key>
     <array>
       <string>com.googleusercontent.apps.594722843062-8pv1no5mprla2hkguge9ieds8d0jmea1</string>
+    </array>
+  </dict>
+  <dict>
+    <key>CFBundleURLSchemes</key>
+    <array>
+      <string>com.akiknowledgeapp</string>
     </array>
   </dict>
 </array>

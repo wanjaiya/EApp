@@ -1,4 +1,4 @@
-package com.erevukaapp
+package com.akiknowledgeapp
 
 import android.app.Application
 import com.facebook.react.PackageList

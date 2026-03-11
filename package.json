@@ -1,5 +1,5 @@
 {
-  "name": "ErevukaApp",
+  "name": "AKI Knowledge Hub",
   "version": "0.0.1",
   "private": true,
   "scripts": {
@@ -22,6 +22,8 @@
     "nativewind": "^4.2.1",
     "react": "19.1.1",
     "react-native": "0.82.0",
+    "react-native-app-auth": "^8.1.0",
+    "react-native-azure-auth": "^1.9.0",
     "react-native-inappbrowser-reborn": "^3.7.0",
     "react-native-linear-gradient": "^2.8.3",
     "react-native-reanimated": "^4.1.3",
