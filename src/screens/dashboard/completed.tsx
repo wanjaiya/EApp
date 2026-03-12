@@ -68,7 +68,7 @@ const Completed = ({ navigation }: MainTabsScreenProps) => {
       }
     } catch (error) {
      
-      console.log(error);
+  
       console.error('Failed to fetch suggested courses:', error);
     } finally {
       setPageLoading(false);

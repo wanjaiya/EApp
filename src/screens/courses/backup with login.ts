@@ -73,9 +73,7 @@ const CourseView = ({ route, navigation }) => {
      const sessionid = newCookies?.sessionid?.value;
      const csrf = newCookies?.csrftoken?.value;
 
-     console.log(newCookies);
-     console.log(sessionid);
-     console.log(csrf);
+   
 
      if (!sessionid) throw new Error("Login failed: no session cookie");
 

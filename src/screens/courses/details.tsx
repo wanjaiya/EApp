@@ -83,13 +83,13 @@ const Details = ({ route, navigation }: MainTabsScreenProps) => {
       if (axios.isAxiosError(error)) {
         const responseData = error.response?.data;
         if (responseData?.errors) {
-          console.log(responseData.errors);
+         
           Alert.alert('Error', responseData.errors);
         } else if (responseData?.message) {
           Alert.alert('Error', responseData.message);
         }
       } else {
-        console.error('Error', error);
+      
         Alert.alert('Error', 'Unable to connect to the server.');
       }
     }
@@ -104,7 +104,7 @@ const Details = ({ route, navigation }: MainTabsScreenProps) => {
       const allCookies = await Cookies.get(LMS_URL);
       const other = await Cookies.get('edxsessionid');
 
-      console.log(edxSessionId);
+
 
       const response = await axiosInstance.get('/api/get-course-data/', {
         params: {
@@ -117,9 +117,6 @@ const Details = ({ route, navigation }: MainTabsScreenProps) => {
       });
 
 
-      console.log(response);
-
-      console.log(course);
 
       if (response.status === 201) {
         if (response.data.expired === true) {
@@ -157,8 +154,8 @@ const Details = ({ route, navigation }: MainTabsScreenProps) => {
         setSequential(response.data.sequential.children);
       }
     } catch (error) {
-      console.log(error);
-
+   
+       
       console.error('Failed to course additional data:', error);
     } finally {
       setPageLoading(false);

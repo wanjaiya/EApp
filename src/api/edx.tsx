@@ -20,12 +20,11 @@ const getCourseData = async (
         }
       );
 
-      console.log(response);
 
       // return response
     }
   } catch (error) {
-    console.log(error);
+
     return error;
   }
 };

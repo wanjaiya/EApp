@@ -39,7 +39,7 @@ const InProgress = ({ navigation }: MainTabsScreenProps) => {
 
     } catch (error) {
       Alert.alert('Error', 'Failed to fetch courses in progress.' + error);
-      console.log(error);
+
       console.error('Failed to fetch suggested courses:', error);
     } finally {
       setPageLoading(false);

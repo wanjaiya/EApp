@@ -65,6 +65,8 @@ const Index = ({ navigation }: MainTabsScreenProps) => {
       // Step 3: Read cookies again after login
       const cookies = await Cookies.get(LMS_BASE_URL);
 
+      
+
       if (cookies.sessionid) {
         // Step 4: Persist cookie for WebView domain
         await Cookies.set(LMS_BASE_URL, {
@@ -180,7 +182,7 @@ const Index = ({ navigation }: MainTabsScreenProps) => {
         setSuggested(response.data);
       }
     } catch (error) {
-      console.log(error);
+
       console.error('Failed to fetch suggested courses:', error);
     }
   };
@@ -230,7 +232,7 @@ const Index = ({ navigation }: MainTabsScreenProps) => {
         setLatest(response.data);
       }
     } catch (error) {
-      console.log(error);
+    
       console.error('Failed to fetch suggested courses:', error);
     }
   };

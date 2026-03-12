@@ -45,6 +45,8 @@ const CourseView = ({ route, navigation }) => {
     );
   }
 
+
+
   const getNextVertical = async () => {
     const verticals = [];
 
@@ -158,6 +160,8 @@ const CourseView = ({ route, navigation }) => {
       { cancelable: true },
     );
   }
+
+
 
   useEffect(() => {
     setCompletePrereq(false);
