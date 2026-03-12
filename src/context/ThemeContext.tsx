@@ -1,74 +1,59 @@
-import React, { createContext, useContext, useEffect, useState} from 'react';
-import { Appearance, useColorScheme } from 'react-native';
+import React, { createContext, useContext, useEffect, useState } from 'react';
+import { useColorScheme } from 'react-native';
 import { useStorageState } from '../hooks/useStorageState';
 
-type ThemeType = 'light' | 'dark' | 'system';
+export type ThemeType = 'light' | 'dark' | 'system';
 
-interface ThemeContextType{
-    theme: ThemeType;
-    currentTheme: 'light' | 'dark';
-    setTheme: (theme: ThemeType) => void;
-
+interface ThemeContextType {
+  theme: ThemeType;
+  currentTheme: 'light' | 'dark';
+  setTheme: (theme: ThemeType) => void;
 }
 
 const ThemeContext = createContext<ThemeContextType>({
-    theme: 'system',
-    currentTheme: 'dark',
-    setTheme: () =>null
+  theme: 'system',
+  currentTheme: 'dark',
+  setTheme: () => null,
 });
 
 export const useTheme = () => useContext(ThemeContext);
 
+export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 
-export const ThemeProvider: React.FC<{children: React.ReactNode}> = ({children}) => {
-    const systemColorScheme = useColorScheme() as 'light' | 'dark';
-    const [[, storedTheme], setStoredTheme] = useStorageState('theme');
-    const [theme, setThemeState] = useState<ThemeType>('dark');
-    const [currentTheme , setCurrentTheme] = useState<'light' | 'dark'>('dark');
+  // Get system color scheme and normalize to 'light' | 'dark'
+  const rawColorScheme = useColorScheme(); // 'light' | 'dark' | 'no-preference' | null
+  const systemColorScheme: 'light' | 'dark' = rawColorScheme === 'dark' ? 'dark' : 'light';
 
+  // Persistent theme from storage
+  const [[, storedTheme], setStoredTheme] = useStorageState('theme');
 
-    //initialize theme from storage or default to system
-    useEffect(() =>{
-       
-        if(storedTheme === null){
-            setThemeState('dark' as ThemeType);
-        }else{
-            setThemeState(storedTheme as ThemeType);
-        }
- 
-    }, [storedTheme]);
+  const [theme, setThemeState] = useState<ThemeType>('system');
+  const [currentTheme, setCurrentTheme] = useState<'light' | 'dark'>(
+    systemColorScheme
+  );
 
+  // Initialize theme from storage
+  useEffect(() => {
+    if (storedTheme) {
+      setThemeState(storedTheme as ThemeType);
+    } else {
+      setThemeState('system');
+    }
+  }, [storedTheme]);
 
+  // Update current theme whenever theme or systemColorScheme changes
+  useEffect(() => {
+    setCurrentTheme(theme === 'system' ? systemColorScheme : theme);
+  }, [theme, systemColorScheme]);
 
-    //update current theme based on theme choice and system preference
-    useEffect(() => {
-        if(theme === 'system'){
-            setCurrentTheme(systemColorScheme || 'dark');
-        }else{
-            setCurrentTheme(theme as 'light' | 'dark');
-        }
-    }, [theme, systemColorScheme]);
+  const setTheme = (newTheme: ThemeType) => {
+    setThemeState(newTheme);
+    setStoredTheme(newTheme);
+  };
 
-   //Listen for system theme Changes
-    useEffect(() => {
-       const subscription = Appearance.addChangeListener(({ colorScheme }) =>{
-        if(theme  === 'system') {
-            
-            setCurrentTheme((colorScheme as 'light' | 'dark') || 'dark');
-        }
-       });
-       return () => subscription.remove();
-    }, [theme]);
-
-
-    const setTheme = (newTheme: ThemeType) =>{
-        setThemeState(newTheme);
-        setStoredTheme(newTheme);
-    };
-
-    return(
-        <ThemeContext.Provider value={{ theme, currentTheme, setTheme }}>
-          {children}
-        </ThemeContext.Provider>
-    )
-}
+  return (
+    <ThemeContext.Provider value={{ theme, currentTheme, setTheme }}>
+      {children}
+    </ThemeContext.Provider>
+  );
+};

@@ -89,24 +89,28 @@ android {
       ]
     }
     signingConfigs {
-        debug {
+         debug {
             storeFile file('debug.keystore')
             storePassword 'android'
             keyAlias 'androiddebugkey'
             keyPassword 'android'
         }
+        // release{
+        //     storeFile file("aki-lms-prod.keystore") // path to your keystore
+        //     storePassword "C0nsultants@26*"
+        //     keyAlias "aki-lms-prod"
+        //     keyPassword "C0nsultants@26*"
+        // }
     }
     buildTypes {
-        debug {
+         debug {
             signingConfig signingConfigs.debug
         }
-        release {
-            // Caution! In production, you need to generate your own keystore file.
-            // see https://reactnative.dev/docs/signed-apk-android.
-            signingConfig signingConfigs.debug
-            minifyEnabled enableProguardInReleaseBuilds
-            proguardFiles getDefaultProguardFile("proguard-android.txt"), "proguard-rules.pro"
-        }
+        // release {
+        //     signingConfig signingConfigs.release
+        //     minifyEnabled enableProguardInReleaseBuilds
+        //     proguardFiles getDefaultProguardFile("proguard-android.txt"), "proguard-rules.pro"
+        // }
     }
 }
 
