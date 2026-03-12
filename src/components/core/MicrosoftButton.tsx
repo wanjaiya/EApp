@@ -1,12 +1,12 @@
 import React from 'react';
-import { TouchableOpacity, Text, StyleSheet, Image, View } from 'react-native';
-import { useTheme } from '../../context/ThemeContext';
+import { TouchableOpacity, Text, StyleSheet, Image, View, useColorScheme } from 'react-native';
+
 
 const MicrosoftButton = ({ onPress, disabled = false }) => {
-  const { currentTheme } = useTheme();
+  const  systemTheme  = useColorScheme();
   return (
     <TouchableOpacity style={[styles.button, disabled && styles.disabled]} onPress={disabled ? undefined : onPress} disabled={disabled} className={`${
-        currentTheme === 'dark' ? ' bg-white' : 'bg-[#e6c619]'
+        systemTheme === 'dark' ? ' bg-white' : 'bg-[#e6c619]'
       }`}>
          <View style={styles.container}>
          <Image
@@ -18,7 +18,7 @@ const MicrosoftButton = ({ onPress, disabled = false }) => {
       <View style={styles.container2}>
        
         <Text style={styles.text} className={`${
-          currentTheme === 'dark' ? ' text-gray-900' : 'text-white'
+          systemTheme === 'dark' ? ' text-gray-900' : 'text-white'
         }`}>
            
           

@@ -6,7 +6,7 @@ import CourseDetails from '../screens/courses/details';
 import CourseView from '../screens/courses/view';
 import { RootStackParamList } from './types';
 import { SessionProvider, useSession } from '../context/AuthContext';
-import { ActivityIndicator, View } from 'react-native';
+import { ActivityIndicator, View, } from 'react-native';
 import MainTabs from './MainTabs';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();

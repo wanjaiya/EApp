@@ -3,10 +3,9 @@ import Input from '../../components/core/Input';
 import axiosInstance from '../../config/axiosConfig';
 import MicrosoftButton from '../../components/core/MicrosoftButton';
 import { useSession } from '../../context/AuthContext';
-import { useTheme } from '../../context/ThemeContext';
 import axios from 'axios';
 import React, { useState } from 'react';
-import { Alert, Image, Text, View } from 'react-native';
+import { Alert, Image, Text, View, useColorScheme } from 'react-native';
 import { SigninScreenProps } from '../../navigation/types';
 import {
   GoogleSignin,
@@ -35,11 +34,10 @@ const azureAuth = new AzureAuth({
   tenant: '987a006e-3266-486c-93e2-96e40fa9341d',
 });
 
-
-
 const Signin = ({ navigation }: SigninScreenProps) => {
   const { signIn } = useSession();
-  const { currentTheme } = useTheme();
+
+
   const [data, setData] = useState({
     email: '',
     password: '',
@@ -50,6 +48,8 @@ const Signin = ({ navigation }: SigninScreenProps) => {
   });
 
   const [loading, setLoading] = useState(false);
+
+  const systemTheme = useColorScheme(); // 'light' | 'dark' | null
 
   const handleChange = (key: string, value: string) => {
     setData({ ...data, [key]: value });
@@ -187,7 +187,7 @@ const Signin = ({ navigation }: SigninScreenProps) => {
   return (
     <View
       className={`flex-1 p-5 ${
-        currentTheme === 'dark' ? 'bg-gray-900' : 'bg-white'
+        systemTheme === 'dark' ? 'bg-gray-900' : 'bg-white'
       }`}
     >
       <View className="items-center mt-4">
@@ -199,7 +199,7 @@ const Signin = ({ navigation }: SigninScreenProps) => {
       <View className="items-center">
         <Text
           className={`text-2xl text-center font-bold mt-4 ${
-            currentTheme === 'dark' ? 'text-white' : 'text-gray-900'
+            systemTheme === 'dark' ? 'text-white' : 'text-gray-900'
           }`}
         >
           Welcome to The AKI Knowledge Hub
@@ -207,7 +207,7 @@ const Signin = ({ navigation }: SigninScreenProps) => {
       </View>
       <Text
         className={`text-[14px] justify-start  mt-4 mb-4 ${
-          currentTheme === 'dark' ? 'text-white' : 'text-gray-900'
+          systemTheme === 'dark' ? 'text-white' : 'text-gray-900'
         }`}
       >
         Sign in to continue
@@ -242,7 +242,7 @@ const Signin = ({ navigation }: SigninScreenProps) => {
       <View className={`flex-1 items-center mt-10 `}>
         <Text
           className={`mb-4 ${
-            currentTheme === 'dark' ? 'text-white' : 'text-gray-900'
+            systemTheme === 'dark' ? 'text-white' : 'text-gray-900'
           }`}
         >
           {' '}

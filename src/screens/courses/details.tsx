@@ -9,11 +9,11 @@ import {
   Alert,
   FlatList,
   ActivityIndicator,
+  useColorScheme
 } from 'react-native';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import axiosInstance from '../../config/axiosConfig';
 import { useSession } from '../../context/AuthContext';
-import { useTheme } from '../../context/ThemeContext';
 import { useThemeColors } from '../../hooks/useThemeColors';
 import RenderHTML from 'react-native-render-html';
 import Button from '../../components/core/Button';
@@ -27,7 +27,7 @@ import { dashboard } from '../dashboard/index';
 const Details = ({ route, navigation }: MainTabsScreenProps) => {
   const { user, session, edxSessionId, signOut } = useSession();
   const colors = useThemeColors();
-  const { currentTheme } = useTheme();
+  const  currentTheme  = useColorScheme();
   const [details, setDetails] = useState([]);
   const [loading, setLoading] = useState(false);
   const [pageLoading, setPageLoading] = useState(false);

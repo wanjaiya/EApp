@@ -1,8 +1,8 @@
-import { useTheme } from '../../context/ThemeContext';
+
 import { useThemeColors } from '../../hooks/useThemeColors';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import React from 'react';
-import { Image, StyleSheet, Text, View } from 'react-native';
+import { Image, StyleSheet, Text, View, useColorScheme } from 'react-native';
 import GradientCard from '../core/GradientCard';
 
 export interface CourseCardProps {
@@ -35,8 +35,7 @@ const CourseCard: React.FC<CourseCardProps> = ({
 }) => {
   const colors = useThemeColors();
   const pieces = effort?.split(':');
-  const { currentTheme } = useTheme();
-
+  const systemTheme = useColorScheme(); 
   return (
     <GradientCard
       onPress={onPress}
@@ -63,7 +62,7 @@ const CourseCard: React.FC<CourseCardProps> = ({
         <View className="flex flex-row w-full p-3 pt-4">
           <Text
             className={`text-md font-bold  ${
-              currentTheme === 'dark' ? 'text-white' : 'text-gray-800'
+              systemTheme === 'dark' ? 'text-gray-800' : 'text-gray-800'
             }`}
           >
             {' '}
@@ -80,7 +79,7 @@ const CourseCard: React.FC<CourseCardProps> = ({
             />
             <Text
               className={`${
-                currentTheme === 'dark' ? 'text-white' : 'text-gray-800'
+                systemTheme === 'dark' ? 'text-gray-800' : 'text-gray-800'
               }`}
             >
               {pieces[2]} Mins
@@ -88,7 +87,7 @@ const CourseCard: React.FC<CourseCardProps> = ({
           </View>
           <Text
             className={`self-end ${
-              currentTheme === 'dark' ? 'text-white' : 'text-gray-800'
+              systemTheme === 'dark' ? 'text-gray-800' : 'text-gray-800'
             }`}
           >
             {enrolled}

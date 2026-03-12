@@ -1,5 +1,5 @@
-import { TextInput, View, Text, TextInputProps} from "react-native";
-import React, { useState } from "react";
+import { TextInput, View, Text, TextInputProps, useColorScheme } from "react-native";
+import React, { useState} from "react";
 import { useTheme } from '../../context/ThemeContext';
 
 interface InputProps extends TextInputProps{
@@ -15,16 +15,16 @@ const Input = ({
  error="",
 }: InputProps) => {
    const [isFocused, setIsFocused] = useState(false);
-   const { currentTheme} = useTheme();
+     const systemTheme = useColorScheme(); 
 
     return (
         <View className="w-full mb-4">
             <TextInput  
-             className={`w-full h-12 border rounded-lg px-3 mb-1 ${currentTheme === 'dark' ? 'bg-gray-800 text-white' : 'bg-white text-gray-900'}
-             ${isFocused ? 'border-primary' : currentTheme === 'dark' ? 'border-gray-600' : ' border-gray-300' } ${error ? "border-red-500":""}`}
+             className={`w-full h-12 border rounded-lg px-3 mb-1 ${systemTheme === 'dark' ? 'bg-gray-800 text-white' : 'bg-white text-gray-900'}
+             ${isFocused ? 'border-primary' : systemTheme === 'dark' ? 'border-gray-600' : ' border-gray-300' } ${error ? "border-red-500":""}`}
              value={value}
              placeholder={placeholder}
-             placeholderTextColor={currentTheme === 'dark'? 'gray': "#9CA3AF"}
+             placeholderTextColor={systemTheme === 'dark'? 'gray': "#9CA3AF"}
              keyboardType={keyboardType}
              secureTextEntry={secureTextEntry}
              onChangeText={onChangeText}

@@ -5,7 +5,7 @@ import { useSession } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import { useThemeColors } from '../hooks/useThemeColors';
 import Ionicons from 'react-native-vector-icons/Ionicons';
-import { ActivityIndicator, Text, View } from 'react-native';
+import { ActivityIndicator, Text, View, useColorScheme } from 'react-native';
 import Dashboard from '../screens/dashboard/index';
 import Settings from '../screens/dashboard/settings';
 import InProgress from '../screens/dashboard/inProgress';
@@ -20,7 +20,7 @@ const Stack = createNativeStackNavigator();
 export default function MainTabs({ route, navigation }: MainTabsScreenProps) {
   const { session, isLoading } = useSession();
   const colors = useThemeColors();
-  const { currentTheme } = useTheme();
+  const  currentTheme  = useColorScheme();
   const { list } = route.params || {};
 
   if (isLoading) {

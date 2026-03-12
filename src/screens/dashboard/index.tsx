@@ -1,8 +1,8 @@
-import { ScrollView, Text, TouchableOpacity, View, Alert } from 'react-native';
+import { ScrollView, Text, TouchableOpacity, View, Alert,useColorScheme } from 'react-native';
 import React, { useEffect, useState, useCallback } from 'react';
 import axiosInstance from '../../config/axiosConfig';
 import { useSession } from '../../context/AuthContext';
-import { useTheme } from '../../context/ThemeContext';
+
 import { useThemeColors } from '../../hooks/useThemeColors';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import FeatureCard from '../../components/app/FeaturedCard';
@@ -19,7 +19,7 @@ const Index = ({ navigation }: MainTabsScreenProps) => {
   const [stats, setStats] = useState([]);
   const [suggested, setSuggested] = useState([]);
   const [latest, setLatest] = useState([]);
-  const { currentTheme } = useTheme();
+  const  currentTheme  = useColorScheme();
   const [visibleCount, setVisibleCount] = useState(5);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [loading, setLoading] = useState(false);

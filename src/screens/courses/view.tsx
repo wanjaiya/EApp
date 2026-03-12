@@ -23,7 +23,6 @@ const CourseView = ({ route, navigation }) => {
   const { user, session, edxSessionId, sessionId, edxUser, position } =
     useSession();
   const colors = useThemeColors();
-  const { currentTheme } = useTheme();
   const { section, parent, course } = route.params;
   const webViewRef = useRef(null);
 

@@ -2,7 +2,7 @@ import { useTheme } from "../../context/ThemeContext";
 import { useThemeColors } from "../../hooks/useThemeColors";
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import React from "react";
-import { Text, View } from "react-native";
+import { Text, View,useColorScheme } from "react-native";
 import GradientCard from "../core/GradientCard";
 
 export interface FeatureCardProps{
@@ -25,7 +25,8 @@ disabled = false,
 className
 })=> {
     const colors = useThemeColors();
-    const { currentTheme } = useTheme();
+    const  currentTheme  = useColorScheme();
+
     return(
          <GradientCard
          onPress={onPress}
@@ -43,8 +44,8 @@ className
               />
             </View>
             <View className="items-center">
-                <Text className= {`text-lg font-semibold text-center mb-2 ${currentTheme === "dark" ? "text-white" : "text-gray-800"}`}>{title}</Text>
-                <Text className= {`text-center text-sm ${currentTheme === "dark" ? "text-gray-300" : "text-gray-600"}`}>{description}</Text>
+                <Text className= {`text-lg font-semibold text-center mb-2 ${currentTheme === "dark" ? "text-gray-800" : "text-gray-800"}`}>{title}</Text>
+                <Text className= {`text-center text-sm ${currentTheme === "dark" ? "text-gray-600" : "text-gray-600"}`}>{description}</Text>
             </View>
             </View>
 

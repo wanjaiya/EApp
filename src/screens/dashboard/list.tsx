@@ -5,6 +5,7 @@ import {
   View,
   ActivityIndicator,
   Alert,
+  useColorScheme
 } from 'react-native';
 import React, { useEffect, useState } from 'react';
 import axiosInstance from '../../config/axiosConfig';
@@ -18,7 +19,7 @@ import { MainTabsScreenProps } from '../../navigation/types';
 const List = ({ route, navigation }: MainTabsScreenProps) => {
   const { user, session,signOut } = useSession();
   const colors = useThemeColors();
-  const { currentTheme } = useTheme();
+  const  currentTheme  = useColorScheme();
   const [courses, setCourses] = useState([]);
   const { list } = route.params || {};
   const [pageLoading, setPageLoading] = useState(false);

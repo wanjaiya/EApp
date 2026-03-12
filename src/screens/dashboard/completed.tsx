@@ -5,11 +5,11 @@ import {
   View,
   ActivityIndicator,
   Alert,
+  useColorScheme
 } from 'react-native';
 import React, { useEffect, useState } from 'react';
 import axiosInstance from '../../config/axiosConfig';
 import { useSession } from '../../context/AuthContext';
-import { useTheme } from '../../context/ThemeContext';
 import { useThemeColors } from '../../hooks/useThemeColors';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import CourseCard from '../../components/app/CourseCard';
@@ -19,7 +19,7 @@ const Completed = ({ navigation }: MainTabsScreenProps) => {
   const { user, session, signOut } = useSession();
   const colors = useThemeColors();
   const [courses, setCourses] = useState([]);
-  const { currentTheme } = useTheme();
+  const  currentTheme  = useColorScheme();
   const [pageLoading, setPageLoading] = useState(false);
 
   const fetchCompletedCourses = async () => {
