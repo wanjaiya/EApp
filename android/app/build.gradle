@@ -89,28 +89,28 @@ android {
       ]
     }
     signingConfigs {
-         debug {
-            storeFile file('debug.keystore')
-            storePassword 'android'
-            keyAlias 'androiddebugkey'
-            keyPassword 'android'
-        }
-        // release{
-        //     storeFile file("aki-lms-prod.keystore") // path to your keystore
-        //     storePassword "C0nsultants@26*"
-        //     keyAlias "aki-lms-prod"
-        //     keyPassword "C0nsultants@26*"
-        //  }
+        //  debug {
+        //     storeFile file('debug.keystore')
+        //     storePassword 'android'
+        //     keyAlias 'androiddebugkey'
+        //     keyPassword 'android'
+        // }
+        release{
+            storeFile file("aki-lms-prod.keystore") // path to your keystore
+            storePassword "C0nsultants@26*"
+            keyAlias "aki-lms-prod"
+            keyPassword "C0nsultants@26*"
+         }
     }
     buildTypes {
-         debug {
-            signingConfig signingConfigs.debug
-        }
-        // release {
-        //     signingConfig signingConfigs.release
-        //     minifyEnabled enableProguardInReleaseBuilds
-        //     proguardFiles getDefaultProguardFile("proguard-android.txt"), "proguard-rules.pro"
+        //  debug {
+        //     signingConfig signingConfigs.debug
         // }
+        release {
+            signingConfig signingConfigs.release
+            minifyEnabled enableProguardInReleaseBuilds
+            proguardFiles getDefaultProguardFile("proguard-android.txt"), "proguard-rules.pro"
+        }
     }
 }
 

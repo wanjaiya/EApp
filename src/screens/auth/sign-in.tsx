@@ -37,7 +37,6 @@ const azureAuth = new AzureAuth({
 const Signin = ({ navigation }: SigninScreenProps) => {
   const { signIn } = useSession();
 
-
   const [data, setData] = useState({
     email: '',
     password: '',
@@ -93,26 +92,45 @@ const Signin = ({ navigation }: SigninScreenProps) => {
   const handleGoogle = async () => {
     setLoading(true);
     try {
-      await GoogleSignin.hasPlayServices();
+      const test = await GoogleSignin.hasPlayServices();
+
       const response = await GoogleSignin.signIn();
+
       if (response) {
         const result = await axiosInstance.post('/api/googleLogin', {
           email: response.data.user.email,
           googleId: response.data.user.id,
         });
 
-        const Rs = await signIn(
-          result.data.token,
-          result.data.user,
-          result.data.edxinstanceId,
-          result.data.sessionId,
-          result.data.edxUser,
-          result.data.position,
-        );
+        console.log(result);
+
+        if (result.status === 201) {
+          Alert.alert(
+            'Error',
+            result.data.error,
+            [
+              {
+                text: 'OK',
+                style: 'cancel',
+              },
+            ],
+            { cancelable: true },
+          );
+        } else {
+          const Rs = await signIn(
+            result.data.token,
+            result.data.user,
+            result.data.edxinstanceId,
+            result.data.sessionId,
+            result.data.edxUser,
+            result.data.position,
+          );
+        }
       } else {
         // sign in was cancelled by user
       }
     } catch (error) {
+      console.log(error);
       if (axios.isAxiosError(error)) {
         const responseData = error.response?.data;
         if (responseData?.errors) {

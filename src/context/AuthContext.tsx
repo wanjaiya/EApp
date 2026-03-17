@@ -101,13 +101,14 @@ export function SessionProvider({ children }: PropsWithChildren) {
 
   const loadUserInfo = async (token: string) => {
     try {
+
+      
       const response = await axiosInstance.get("/api/user", {
         headers: {
           Authorization: `Bearer ${token}`,
         },
       });
        
-
       setUser(JSON.stringify(response.data));
 
     } catch (error) {

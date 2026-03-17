@@ -42,6 +42,7 @@ const Index = ({ navigation }: MainTabsScreenProps) => {
         throw new Error('CSRF token not found');
       }
 
+  
       // Step 2: Login (form-encoded)
       const formData = new URLSearchParams();
       formData.append('email', email);
@@ -49,6 +50,9 @@ const Index = ({ navigation }: MainTabsScreenProps) => {
       formData.append('grant_type', 'password');
       formData.append('client_id', EDX_KEY);
       formData.append('client_secret', EDX_SECRET);
+
+
+
 
       await axios.post(
         `${LMS_BASE_URL}/user_api/v1/account/login_session/`,
